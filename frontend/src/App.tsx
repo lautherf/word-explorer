@@ -81,6 +81,7 @@ interface HistoryEntry {
 
 const STORAGE_KEY = 'word-explorer-collections'
 const LANG_KEY = 'word-explorer-lang'
+const LAYOUT_KEY = 'word-explorer-layout'
 
 function loadCollections(): Collection[] {
   try {
@@ -94,9 +95,20 @@ function loadLang(): Lang {
   return v === 'zh' || v === 'en' ? v : 'zh'
 }
 
+type LayoutMode = 'standard' | 'elegant'
+
+function loadLayout(): LayoutMode {
+  const v = localStorage.getItem(LAYOUT_KEY)
+  return v === 'elegant' ? 'elegant' : 'standard'
+}
+
 function App() {
   const [lang, setLang] = useState<Lang>(loadLang)
   useEffect(() => { localStorage.setItem(LANG_KEY, lang) }, [lang])
+
+  const [layout, setLayout] = useState<LayoutMode>(loadLayout)
+  useEffect(() => { localStorage.setItem(LAYOUT_KEY, layout) }, [layout])
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   const [seedInput, setSeedInput] = useState('')
   const [currentWords, setCurrentWords] = useState<string[]>([])
@@ -297,10 +309,11 @@ function App() {
   }
 
   const hasActiveCollections = collections.some((c) => c.checked)
+  const isElegant = layout === 'elegant'
 
-  return (
-    <div className="app-layout">
-      <aside className="sidebar">
+  function sidebarContent() {
+    return (
+      <>
         <div className="sidebar-top">
           <h2>{t(lang, 'collections')}</h2>
           <button className="lang-toggle" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
@@ -319,31 +332,54 @@ function App() {
           {collections.map((c) => (
             <div key={c.id} className={`collection-item ${c.checked ? 'active' : ''}`}>
               <label className="collect-label">
-                <input
-                  type="checkbox"
-                  checked={c.checked}
-                  onChange={() => toggleCollection(c.id)}
-                />
-                <input
-                  className="collect-name"
-                  value={c.name}
-                  onChange={(e) => renameCollection(c.id, e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                />
+                <input type="checkbox" checked={c.checked} onChange={() => toggleCollection(c.id)} />
+                <input className="collect-name" value={c.name} onChange={(e) => renameCollection(c.id, e.target.value)} onClick={(e) => e.stopPropagation()} />
               </label>
               <span className="collect-count">{c.words.length}</span>
               <button className="collect-del" onClick={() => deleteCollection(c.id)}>✕</button>
             </div>
           ))}
         </div>
-        {hasActiveCollections && (
-          <p className="collect-hint">{t(lang, 'active-hint')}</p>
-        )}
-      </aside>
+        {hasActiveCollections && <p className="collect-hint">{t(lang, 'active-hint')}</p>}
+      </>
+    )
+  }
+
+  return (
+    <div className={`app-layout ${isElegant ? 'layout-elegant' : ''}`}>
+      {isElegant && (
+        <>
+          <button className="drawer-toggle" onClick={() => setDrawerOpen(!drawerOpen)}>
+            ☰
+          </button>
+          <div className={`drawer-overlay ${drawerOpen ? 'open' : ''}`} onClick={() => setDrawerOpen(false)} />
+          <aside className={`drawer-sidebar ${drawerOpen ? 'open' : ''}`}>
+            {sidebarContent()}
+          </aside>
+        </>
+      )}
+
+      {!isElegant && (
+        <aside className="sidebar">
+          {sidebarContent()}
+        </aside>
+      )}
 
       <main className="main">
         <header className="header">
-          <h1>{t(lang, 'title')}</h1>
+          <div className="header-top">
+            <h1>{t(lang, 'title')}</h1>
+            <div className="header-top-actions">
+              <button className="layout-toggle" onClick={() => setLayout(isElegant ? 'standard' : 'elegant')}>
+                {isElegant ? '◇ Standard' : '◆ Elegant'}
+              </button>
+              {isElegant && (
+                <button className="elegant-drawer-btn" onClick={() => setDrawerOpen(true)}>
+                  ☰
+                </button>
+              )}
+            </div>
+          </div>
           <div className="search-bar">
             <input
               value={seedInput}
