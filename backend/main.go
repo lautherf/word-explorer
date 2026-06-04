@@ -221,11 +221,12 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 	wordList := strings.Join(req.Words, ", ")
 	system := "You are a skilled writer."
 	langInstr := " Write in the same language as the keywords."
+	guidance := " Use the following concepts as high-level thematic guidance — the article should be related to them in spirit and direction, but you don't need to force every single one into the text."
 	var userPrompt string
 	if req.Existing != "" {
-		userPrompt = fmt.Sprintf("Continue writing the following article. Incorporate these keywords: [%s]. Maintain the same style and language. Do not repeat what has already been written.\n\nExisting article:\n%s\n\nContinue from here:%s", wordList, req.Existing, langInstr)
+		userPrompt = fmt.Sprintf("Continue writing the following article. Use these concepts as thematic direction: [%s]. Maintain the same style and language. Do not repeat what has already been written.\n\nExisting article:\n%s\n\nContinue from here:%s%s", wordList, req.Existing, langInstr, guidance)
 	} else {
-		userPrompt = fmt.Sprintf("Write a very short article (about 100-150 words) that incorporates these keywords: [%s]. The article should have a title and 2-3 brief paragraphs.%s", wordList, langInstr)
+		userPrompt = fmt.Sprintf("Write a very short article (about 100-150 words) that is inspired by these concepts: [%s]. The article should have a title and 2-3 brief paragraphs. Stay broadly on topic, but don't force every keyword in.%s%s", wordList, langInstr, guidance)
 	}
 
 	content, err := callLLM(system, userPrompt)
