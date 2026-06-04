@@ -2,6 +2,71 @@ import { useEffect, useRef, useState } from 'react'
 import { marked } from 'marked'
 import './App.css'
 
+type Lang = 'zh' | 'en'
+
+const zh: Record<string, string> = {
+  'collections': '集合',
+  'save-center': '+ 保存中央词',
+  'no-collections': '暂无集合',
+  'active-hint': '已勾选的集合会参与 LLM 种子',
+  'title': '词网探索',
+  'seed-placeholder': '输入一个种子词...',
+  'explore': '探索',
+  'manual-placeholder': '键入词后添加...',
+  'add': '+ 添加',
+  'generate': '✍ 生成文章',
+  'generating': '写作中...',
+  'thinking': '思考中...',
+  'click-hint': '点击上方词卡选中',
+  'selected-hint': '个已选中',
+  'explore-selected': '探索选中 →',
+  'article': '文章',
+  'text-input': '文本输入',
+  'copy': '📋 复制',
+  'extract-placeholder': '粘贴或输入文本，然后点击提取关键词...',
+  'extract': '🔍 提取关键词',
+  'extracting': '提取中...',
+  'error-api': 'API 失败，后端是否在运行？',
+  'error-gen': '生成文章失败',
+  'error-extract': '提取关键词失败',
+  'hover-tip': '悬停 0.5 秒自动选中',
+}
+
+const en: Record<string, string> = {
+  'collections': 'Collections',
+  'save-center': '+ Save Center Words',
+  'no-collections': 'No collections yet',
+  'active-hint': 'Active collections contribute to LLM seeds',
+  'title': 'Word Explorer',
+  'seed-placeholder': 'Enter a seed word...',
+  'explore': 'Explore',
+  'manual-placeholder': 'Type a word to add...',
+  'add': '+ Add',
+  'generate': '✍ Generate Article',
+  'generating': 'Writing...',
+  'thinking': 'Thinking...',
+  'click-hint': 'Click words above to select them',
+  'selected-hint': 'selected',
+  'explore-selected': 'Explore Selected →',
+  'article': 'Article',
+  'text-input': 'Text Input',
+  'copy': '📋 Copy',
+  'extract-placeholder': 'Paste or type text, then click Extract Keywords...',
+  'extract': '🔍 Extract Keywords',
+  'extracting': 'Extracting...',
+  'error-api': 'Failed to explore. Is the backend running?',
+  'error-gen': 'Failed to generate article',
+  'error-extract': 'Failed to extract keywords',
+  'hover-tip': 'Hover 0.5s to auto-select',
+}
+
+function t(lang: Lang, key: string, ...args: string[]): string {
+  const map = lang === 'zh' ? zh : en
+  let s = map[key] ?? key
+  args.forEach((a, i) => { s = s.replace(`{${i}}`, a) })
+  return s
+}
+
 interface Collection {
   id: string
   name: string
@@ -15,17 +80,24 @@ interface HistoryEntry {
 }
 
 const STORAGE_KEY = 'word-explorer-collections'
+const LANG_KEY = 'word-explorer-lang'
 
 function loadCollections(): Collection[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
+  } catch { return [] }
+}
+
+function loadLang(): Lang {
+  const v = localStorage.getItem(LANG_KEY)
+  return v === 'zh' || v === 'en' ? v : 'zh'
 }
 
 function App() {
+  const [lang, setLang] = useState<Lang>(loadLang)
+  useEffect(() => { localStorage.setItem(LANG_KEY, lang) }, [lang])
+
   const [seedInput, setSeedInput] = useState('')
   const [currentWords, setCurrentWords] = useState<string[]>([])
   const [selectedWords, setSelectedWords] = useState<Set<string>>(new Set())
@@ -39,10 +111,7 @@ function App() {
   const [manualInput, setManualInput] = useState('')
 
   const [collections, setCollections] = useState<Collection[]>(loadCollections)
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(collections))
-  }, [collections])
+  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(collections)) }, [collections])
 
   const [article, setArticle] = useState('')
   const [articleLoading, setArticleLoading] = useState(false)
@@ -58,6 +127,12 @@ function App() {
     return [...new Set([...centerWords, ...activeCollectionWords()])]
   }
 
+  function apiLang(): string {
+    const firstWord = [...centerWords, ...seedInput.split(' ')].find(Boolean)
+    if (!firstWord) return lang === 'zh' ? 'zh' : 'en'
+    return /[\u4e00-\u9fff]/.test(firstWord) ? 'zh' : 'en'
+  }
+
   async function explore(words: string[]) {
     setLoading(true)
     setError('')
@@ -65,14 +140,14 @@ function App() {
       const res = await fetch('/api/explore', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ words }),
+        body: JSON.stringify({ words, lang: apiLang() }),
       })
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
       setCurrentWords(data.words)
       setSelectedWords(new Set())
     } catch {
-      setError('Failed to explore. Is the backend running?')
+      setError(t(lang, 'error-api'))
     } finally {
       setLoading(false)
     }
@@ -150,13 +225,13 @@ function App() {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ words: seeds }),
+        body: JSON.stringify({ words: seeds, lang: apiLang() }),
       })
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
       setArticle(data.article)
     } catch {
-      setError('Failed to generate article')
+      setError(t(lang, 'error-gen'))
     } finally {
       setArticleLoading(false)
     }
@@ -170,7 +245,7 @@ function App() {
       const res = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: txt }),
+        body: JSON.stringify({ text: txt, lang: apiLang() }),
       })
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
@@ -178,7 +253,7 @@ function App() {
       setCenterWords((prev) => [...prev, ...newWords])
       setTextInput('')
     } catch {
-      setError('Failed to extract keywords')
+      setError(t(lang, 'error-extract'))
     } finally {
       setExtracting(false)
     }
@@ -186,7 +261,7 @@ function App() {
 
   function saveCollection() {
     if (centerWords.length === 0) return
-    const name = `Collection ${collections.length + 1}`
+    const name = `${t(lang, 'collections')} ${collections.length + 1}`
     setCollections([
       ...collections,
       { id: Date.now().toString(), name, words: [...centerWords], checked: false },
@@ -226,15 +301,20 @@ function App() {
   return (
     <div className="app-layout">
       <aside className="sidebar">
-        <h2>Collections</h2>
+        <div className="sidebar-top">
+          <h2>{t(lang, 'collections')}</h2>
+          <button className="lang-toggle" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
+            {lang === 'zh' ? 'EN' : '中'}
+          </button>
+        </div>
         {centerWords.length > 0 && (
           <button className="save-col-btn" onClick={saveCollection}>
-            + Save Center Words
+            {t(lang, 'save-center')}
           </button>
         )}
         <div className="collection-list">
           {collections.length === 0 && (
-            <p className="empty-hint">No collections yet</p>
+            <p className="empty-hint">{t(lang, 'no-collections')}</p>
           )}
           {collections.map((c) => (
             <div key={c.id} className={`collection-item ${c.checked ? 'active' : ''}`}>
@@ -257,24 +337,22 @@ function App() {
           ))}
         </div>
         {hasActiveCollections && (
-          <p className="collect-hint">
-            Active collections contribute to LLM seeds
-          </p>
+          <p className="collect-hint">{t(lang, 'active-hint')}</p>
         )}
       </aside>
 
       <main className="main">
         <header className="header">
-          <h1>Word Explorer</h1>
+          <h1>{t(lang, 'title')}</h1>
           <div className="search-bar">
             <input
               value={seedInput}
               onChange={(e) => setSeedInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleInitialExplore()}
-              placeholder="Enter a seed word..."
+              placeholder={t(lang, 'seed-placeholder')}
             />
             <button onClick={handleInitialExplore} disabled={loading || !seedInput.trim()}>
-              Explore
+              {t(lang, 'explore')}
             </button>
           </div>
         </header>
@@ -295,7 +373,7 @@ function App() {
         {centerWords.length > 0 && (
           <section className="center-zone">
             {centerWords.map((w) => (
-              <button key={w} className="center-chip" title="Click to remove" onClick={() => removeCenterWord(w)}>
+              <button key={w} className="center-chip" onClick={() => removeCenterWord(w)}>
                 {w} ✕
               </button>
             ))}
@@ -308,20 +386,20 @@ function App() {
               value={manualInput}
               onChange={(e) => setManualInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleManualAdd()}
-              placeholder="Type a word to add..."
+              placeholder={t(lang, 'manual-placeholder')}
             />
-            <button onClick={handleManualAdd} disabled={!manualInput.trim()}>+ Add</button>
+            <button onClick={handleManualAdd} disabled={!manualInput.trim()}>{t(lang, 'add')}</button>
           </div>
 
           {allSeedWords().length > 0 && (
             <button className="generate-btn" onClick={handleGenerate} disabled={articleLoading}>
-              {articleLoading ? 'Writing...' : '✍ Generate Article'}
+              {articleLoading ? t(lang, 'generating') : t(lang, 'generate')}
             </button>
           )}
         </div>
 
         {error && <div className="error">{error}</div>}
-        {loading && <div className="loading">Thinking...</div>}
+        {loading && <div className="loading">{t(lang, 'thinking')}</div>}
 
         {currentWords.length > 0 && !loading && (
           <>
@@ -342,15 +420,16 @@ function App() {
             <div className="actions">
               <span className="hint">
                 {selectedWords.size === 0
-                  ? 'Click words above to select them'
-                  : `${selectedWords.size} word${selectedWords.size > 1 ? 's' : ''} selected`}
+                  ? t(lang, 'click-hint')
+                  : `${selectedWords.size} ${t(lang, 'selected-hint')}`}
               </span>
+              <div className="hover-hint">{t(lang, 'hover-tip')}</div>
               <button
                 className="explore-btn"
                 onClick={handleContinueExplore}
                 disabled={selectedWords.size === 0}
               >
-                Explore Selected →
+                {t(lang, 'explore-selected')}
               </button>
             </div>
           </>
@@ -364,29 +443,29 @@ function App() {
                   className={`tab ${articleMode === 'article' ? 'active' : ''}`}
                   onClick={() => setArticleMode('article')}
                 >
-                  Article
+                  {t(lang, 'article')}
                 </button>
                 <button
                   className={`tab ${articleMode === 'input' ? 'active' : ''}`}
                   onClick={() => setArticleMode('input')}
                 >
-                  Text Input
+                  {t(lang, 'text-input')}
                 </button>
               </div>
               <div className="article-header-actions">
-                <button className="header-btn" onClick={copyArticle} title="Copy markdown">📋 Copy</button>
+                <button className="header-btn" onClick={copyArticle}>{t(lang, 'copy')}</button>
                 <button className="close-btn" onClick={() => setArticle('')}>✕</button>
               </div>
             </div>
 
             {articleMode === 'article' ? (
-              <div className="article-content markdown-body" dangerouslySetInnerHTML={{ __html: marked.parse(article) }} />
+              <div className="article-content" dangerouslySetInnerHTML={{ __html: marked.parse(article) }} />
             ) : (
               <div className="article-input-area">
                 <textarea
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
-                  placeholder="Paste or type any text here, then click Extract Keywords..."
+                  placeholder={t(lang, 'extract-placeholder')}
                   rows={8}
                 />
                 <button
@@ -394,7 +473,7 @@ function App() {
                   onClick={handleExtract}
                   disabled={extracting || !textInput.trim()}
                 >
-                  {extracting ? 'Extracting...' : '🔍 Extract Keywords'}
+                  {extracting ? t(lang, 'extracting') : t(lang, 'extract')}
                 </button>
               </div>
             )}

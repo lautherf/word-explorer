@@ -19,6 +19,7 @@ var (
 
 type ExploreRequest struct {
 	Words []string `json:"words"`
+	Lang  string   `json:"lang"`
 }
 
 type ExploreResponse struct {
@@ -27,6 +28,7 @@ type ExploreResponse struct {
 
 type GenerateRequest struct {
 	Words []string `json:"words"`
+	Lang  string   `json:"lang"`
 }
 
 type GenerateResponse struct {
@@ -143,7 +145,8 @@ func handleExplore(w http.ResponseWriter, r *http.Request) {
 	}
 
 	wordList := strings.Join(req.Words, ", ")
-	prompt := "Given these seed words: [" + wordList + "], generate 20 closely related words or concepts. Return ONLY a JSON array of strings, no other text."
+	langInstr := " Respond in the same language as the seed words."
+	prompt := "Given these seed words: [" + wordList + "], generate 20 closely related words or concepts. Return ONLY a JSON array of strings, no other text." + langInstr
 	system := "You are a semantic association engine. Always respond with valid JSON only, no other text."
 
 	content, err := callLLM(system, prompt)
@@ -169,6 +172,7 @@ func handleExtract(w http.ResponseWriter, r *http.Request) {
 
 	var req struct {
 		Text string `json:"text"`
+		Lang string `json:"lang"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, `{"error":"invalid JSON"}`, http.StatusBadRequest)
@@ -180,7 +184,8 @@ func handleExtract(w http.ResponseWriter, r *http.Request) {
 	}
 
 	system := "You are a keyword extraction engine. Extract all important keywords and concepts from the given text. Return ONLY a JSON array of strings, no other text."
-	userPrompt := fmt.Sprintf("Extract all meaningful keywords and concepts from this text:\n\n%s", req.Text)
+	langInstr := " Respond in the same language as the input text."
+	userPrompt := fmt.Sprintf("Extract all meaningful keywords and concepts from this text:\n\n%s%s", req.Text, langInstr)
 
 	content, err := callLLM(system, userPrompt)
 	if err != nil {
@@ -212,7 +217,8 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 
 	wordList := strings.Join(req.Words, ", ")
 	system := "You are a skilled writer."
-	userPrompt := fmt.Sprintf("Write a short, engaging article (about 300-500 words) that incorporates these keywords: [%s]. The article should be well-structured with a title and paragraphs.", wordList)
+	langInstr := " Write the article in the same language as the keywords."
+	userPrompt := fmt.Sprintf("Write a short, engaging article (about 300-500 words) that incorporates these keywords: [%s]. The article should be well-structured with a title and paragraphs.%s", wordList, langInstr)
 
 	content, err := callLLM(system, userPrompt)
 	if err != nil {
