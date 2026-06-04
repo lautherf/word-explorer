@@ -53,6 +53,7 @@ func callLLM(systemPrompt, userPrompt string) (string, error) {
 	req, _ := http.NewRequest("POST", llmBaseURL+"/chat/completions", bytes.NewReader(b))
 	req.Header.Set("Authorization", "Bearer "+llmAPIKey)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("HTTP-Referer", "http://localhost:8080")
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -263,22 +264,22 @@ func (g *gzipResponseWriter) Write(b []byte) (int, error) {
 }
 
 func main() {
-	llmAPIKey = os.Getenv("DEEPSEEK_API_KEY")
+	llmAPIKey = os.Getenv("OPENROUTER_API_KEY")
 	if llmAPIKey == "" {
-		llmAPIKey = os.Getenv("OPENROUTER_API_KEY")
+		llmAPIKey = os.Getenv("DEEPSEEK_API_KEY")
 	}
 	if llmAPIKey == "" {
-		log.Fatal("DEEPSEEK_API_KEY or OPENROUTER_API_KEY not set")
+		log.Fatal("OPENROUTER_API_KEY or DEEPSEEK_API_KEY not set")
 	}
 
 	llmModel = os.Getenv("LLM_MODEL")
 	if llmModel == "" {
-		llmModel = "deepseek-v4-flash"
+		llmModel = "openrouter/free"
 	}
 
 	llmBaseURL = os.Getenv("LLM_BASE_URL")
 	if llmBaseURL == "" {
-		llmBaseURL = "https://api.deepseek.com/v1"
+		llmBaseURL = "https://openrouter.ai/api/v1"
 	}
 
 	http.HandleFunc("/api/explore", handleExplore)
