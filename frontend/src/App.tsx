@@ -30,6 +30,12 @@ const zh: Record<string, string> = {
   'error-gen': '生成文章失败',
   'error-extract': '提取关键词失败',
   'hover-tip': '悬停 0.5 秒自动选中',
+  'settings': '设置',
+  'auto-select': '悬停自动选中',
+  'expand': '展开',
+  'collapse': '收起',
+  'add-to-col': '添加到集合',
+  'del-word': '删除',
 }
 
 const en: Record<string, string> = {
@@ -58,6 +64,12 @@ const en: Record<string, string> = {
   'error-gen': 'Failed to generate article',
   'error-extract': 'Failed to extract keywords',
   'hover-tip': 'Hover 0.5s to auto-select',
+  'settings': 'Settings',
+  'auto-select': 'Hover auto-select',
+  'expand': 'Expand',
+  'collapse': 'Collapse',
+  'add-to-col': 'Add to collection',
+  'del-word': 'Delete',
 }
 
 function t(lang: Lang, key: string, ...args: string[]): string {
@@ -81,6 +93,7 @@ interface HistoryEntry {
 
 const STORAGE_KEY = 'word-explorer-collections'
 const LANG_KEY = 'word-explorer-lang'
+const AUTO_SELECT_KEY = 'word-explorer-auto-select'
 
 function loadCollections(): Collection[] {
   try {
@@ -108,10 +121,20 @@ function App() {
 
   const hoverTimers = useRef<Map<string, number>>(new Map())
 
+  const [showSettings, setShowSettings] = useState(false)
+
   const [manualInput, setManualInput] = useState('')
 
   const [collections, setCollections] = useState<Collection[]>(loadCollections)
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(collections)) }, [collections])
+
+  const [autoSelect, setAutoSelect] = useState(() => {
+    const v = localStorage.getItem(AUTO_SELECT_KEY)
+    return v === null ? true : v === 'true'
+  })
+  useEffect(() => { localStorage.setItem(AUTO_SELECT_KEY, String(autoSelect)) }, [autoSelect])
+  const [expandedCol, setExpandedCol] = useState<string | null>(null)
+  const [colWordInput, setColWordInput] = useState('')
 
   const [article, setArticle] = useState('')
   const [articleLoading, setArticleLoading] = useState(false)
@@ -196,6 +219,7 @@ function App() {
   }
 
   function startHoverTimer(word: string) {
+    if (!autoSelect) return
     const id = window.setTimeout(() => toggleWord(word), 500)
     hoverTimers.current.set(word, id)
   }
@@ -285,6 +309,21 @@ function App() {
     )
   }
 
+  function removeCollectionWord(colId: string, word: string) {
+    setCollections((prev) =>
+      prev.map((c) => c.id === colId ? { ...c, words: c.words.filter((w) => w !== word) } : c)
+    )
+  }
+
+  function addCollectionWord(colId: string) {
+    const w = colWordInput.trim()
+    if (!w) return
+    setCollections((prev) =>
+      prev.map((c) => c.id === colId && !c.words.includes(w) ? { ...c, words: [...c.words, w] } : c)
+    )
+    setColWordInput('')
+  }
+
   function copyArticle() {
     const ta = document.createElement('textarea')
     ta.value = article
@@ -303,10 +342,29 @@ function App() {
       <aside className="sidebar">
         <div className="sidebar-top">
           <h2>{t(lang, 'collections')}</h2>
-          <button className="lang-toggle" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
-            {lang === 'zh' ? 'EN' : '中'}
-          </button>
+          <div className="sidebar-top-actions">
+            <button className="settings-toggle" onClick={() => setShowSettings(!showSettings)} title={t(lang, 'settings')}>
+              ⚙
+            </button>
+            <button className="lang-toggle" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
+              {lang === 'zh' ? 'EN' : '中'}
+            </button>
+          </div>
         </div>
+
+        {showSettings && (
+          <div className="settings-panel">
+            <label className="setting-row">
+              <span>{t(lang, 'auto-select')}</span>
+              <input
+                type="checkbox"
+                checked={autoSelect}
+                onChange={(e) => setAutoSelect(e.target.checked)}
+              />
+            </label>
+          </div>
+        )}
+
         {centerWords.length > 0 && (
           <button className="save-col-btn" onClick={saveCollection}>
             {t(lang, 'save-center')}
@@ -316,25 +374,55 @@ function App() {
           {collections.length === 0 && (
             <p className="empty-hint">{t(lang, 'no-collections')}</p>
           )}
-          {collections.map((c) => (
-            <div key={c.id} className={`collection-item ${c.checked ? 'active' : ''}`}>
-              <label className="collect-label">
-                <input
-                  type="checkbox"
-                  checked={c.checked}
-                  onChange={() => toggleCollection(c.id)}
-                />
-                <input
-                  className="collect-name"
-                  value={c.name}
-                  onChange={(e) => renameCollection(c.id, e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </label>
-              <span className="collect-count">{c.words.length}</span>
-              <button className="collect-del" onClick={() => deleteCollection(c.id)}>✕</button>
-            </div>
-          ))}
+          {collections.map((c) => {
+            const isExpanded = expandedCol === c.id
+            return (
+              <div key={c.id}>
+                <div className={`collection-item ${c.checked ? 'active' : ''}`}>
+                  <label className="collect-label">
+                    <input
+                      type="checkbox"
+                      checked={c.checked}
+                      onChange={() => toggleCollection(c.id)}
+                    />
+                    <input
+                      className="collect-name"
+                      value={c.name}
+                      onChange={(e) => renameCollection(c.id, e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </label>
+                  <span className="collect-count">{c.words.length}</span>
+                  <button
+                    className="collect-expand"
+                    onClick={() => setExpandedCol(isExpanded ? null : c.id)}
+                  >
+                    {isExpanded ? '▾' : '▸'}
+                  </button>
+                  <button className="collect-del" onClick={() => deleteCollection(c.id)}>✕</button>
+                </div>
+                {isExpanded && (
+                  <div className="collection-words">
+                    {c.words.map((w) => (
+                      <div key={w} className="collection-word-row">
+                        <span>{w}</span>
+                        <button onClick={() => removeCollectionWord(c.id, w)}>✕</button>
+                      </div>
+                    ))}
+                    <div className="collection-word-add">
+                      <input
+                        value={colWordInput}
+                        onChange={(e) => setColWordInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addCollectionWord(c.id)}
+                        placeholder={t(lang, 'add-to-col')}
+                      />
+                      <button onClick={() => addCollectionWord(c.id)} disabled={!colWordInput.trim()}>+</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
         {hasActiveCollections && (
           <p className="collect-hint">{t(lang, 'active-hint')}</p>
@@ -423,7 +511,7 @@ function App() {
                   ? t(lang, 'click-hint')
                   : `${selectedWords.size} ${t(lang, 'selected-hint')}`}
               </span>
-              <div className="hover-hint">{t(lang, 'hover-tip')}</div>
+              {autoSelect && <div className="hover-hint">{t(lang, 'hover-tip')}</div>}
               <button
                 className="explore-btn"
                 onClick={handleContinueExplore}
