@@ -190,8 +190,9 @@ function App() {
   }
 
   function handleContinueExplore() {
-    const selected = Array.from(selectedWords)
-    if (selected.length === 0) return
+    const selected = selectedWords.size > 0
+      ? Array.from(selectedWords)
+      : currentWords
 
     const deduped = [...new Set([...centerWords, ...selected])]
     setHistory([...history, { words: centerWords, label: centerWords.join(', ') }])
@@ -532,16 +533,15 @@ function App() {
             <div className="actions">
               <span className="hint">
                 {selectedWords.size === 0
-                  ? t(lang, 'click-hint')
+                  ? `${currentWords.length} ${t(lang, 'selected-hint')} — ${t(lang, 'click-hint')}`
                   : `${selectedWords.size} ${t(lang, 'selected-hint')}`}
               </span>
               {autoSelect && <div className="hover-hint">{t(lang, 'hover-tip')}</div>}
               <button
                 className="explore-btn"
                 onClick={handleContinueExplore}
-                disabled={selectedWords.size === 0}
               >
-                {t(lang, 'explore-selected')}
+                {selectedWords.size === 0 ? t(lang, 'explore-selected') : t(lang, 'explore-selected')}
               </button>
             </div>
           </>
