@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
 import './App.css'
 
@@ -33,6 +33,8 @@ function App() {
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const hoverTimers = useRef<Map<string, number>>(new Map())
 
   const [manualInput, setManualInput] = useState('')
 
@@ -118,6 +120,19 @@ function App() {
     })
   }
 
+  function startHoverTimer(word: string) {
+    const id = window.setTimeout(() => toggleWord(word), 500)
+    hoverTimers.current.set(word, id)
+  }
+
+  function clearHoverTimer(word: string) {
+    const id = hoverTimers.current.get(word)
+    if (id !== undefined) {
+      clearTimeout(id)
+      hoverTimers.current.delete(word)
+    }
+  }
+
   function handleManualAdd() {
     const trimmed = manualInput.trim()
     if (!trimmed) return
@@ -176,6 +191,7 @@ function App() {
       ...collections,
       { id: Date.now().toString(), name, words: [...centerWords], checked: false },
     ])
+    setCenterWords([])
   }
 
   function toggleCollection(id: string) {
@@ -195,7 +211,14 @@ function App() {
   }
 
   function copyArticle() {
-    navigator.clipboard.writeText(article)
+    const ta = document.createElement('textarea')
+    ta.value = article
+    ta.style.position = 'fixed'
+    ta.style.opacity = '0'
+    document.body.appendChild(ta)
+    ta.select()
+    document.execCommand('copy')
+    document.body.removeChild(ta)
   }
 
   const hasActiveCollections = collections.some((c) => c.checked)
@@ -308,6 +331,8 @@ function App() {
                   key={word}
                   className={`word-card ${selectedWords.has(word) ? 'selected' : ''}`}
                   onClick={() => toggleWord(word)}
+                  onMouseEnter={() => startHoverTimer(word)}
+                  onMouseLeave={() => clearHoverTimer(word)}
                 >
                   {word}
                 </button>
