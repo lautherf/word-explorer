@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import Markdown from 'react-markdown'
+import { marked } from 'marked'
 import './App.css'
 
 interface Collection {
@@ -380,9 +380,7 @@ function App() {
             </div>
 
             {articleMode === 'article' ? (
-              <div className="article-content markdown-body">
-                <Markdown>{article}</Markdown>
-              </div>
+              <div className="article-content markdown-body" dangerouslySetInnerHTML={{ __html: marked.parse(article) }} />
             ) : (
               <div className="article-input-area">
                 <textarea
