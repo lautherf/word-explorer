@@ -30,8 +30,9 @@ type ExploreResponse struct {
 }
 
 type GenerateRequest struct {
-	Words []string `json:"words"`
-	Lang  string   `json:"lang"`
+	Words    []string `json:"words"`
+	Lang     string   `json:"lang"`
+	Existing string   `json:"existing"`
 }
 
 type GenerateResponse struct {
@@ -219,8 +220,13 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 
 	wordList := strings.Join(req.Words, ", ")
 	system := "You are a skilled writer."
-	langInstr := " Write the article in the same language as the keywords."
-	userPrompt := fmt.Sprintf("Write a very short article (about 100-150 words) that incorporates these keywords: [%s]. The article should have a title and 2-3 brief paragraphs.%s", wordList, langInstr)
+	langInstr := " Write in the same language as the keywords."
+	var userPrompt string
+	if req.Existing != "" {
+		userPrompt = fmt.Sprintf("Continue writing the following article. Incorporate these keywords: [%s]. Maintain the same style and language. Do not repeat what has already been written.\n\nExisting article:\n%s\n\nContinue from here:%s", wordList, req.Existing, langInstr)
+	} else {
+		userPrompt = fmt.Sprintf("Write a very short article (about 100-150 words) that incorporates these keywords: [%s]. The article should have a title and 2-3 brief paragraphs.%s", wordList, langInstr)
+	}
 
 	content, err := callLLM(system, userPrompt)
 	if err != nil {

@@ -36,6 +36,8 @@ const zh: Record<string, string> = {
   'collapse': '收起',
   'add-to-col': '添加到集合',
   'del-word': '删除',
+  'continue': '续写',
+  'continuing': '续写中...',
 }
 
 const en: Record<string, string> = {
@@ -70,6 +72,8 @@ const en: Record<string, string> = {
   'collapse': 'Collapse',
   'add-to-col': 'Add to collection',
   'del-word': 'Delete',
+  'continue': 'Continue',
+  'continuing': 'Continuing...',
 }
 
 function t(lang: Lang, key: string, ...args: string[]): string {
@@ -254,6 +258,26 @@ function App() {
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
       setArticle(data.article)
+    } catch {
+      setError(t(lang, 'error-gen'))
+    } finally {
+      setArticleLoading(false)
+    }
+  }
+
+  async function handleContinueWriting() {
+    const seeds = allSeedWords()
+    if (seeds.length === 0 || !article) return
+    setArticleLoading(true)
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ words: seeds, lang: apiLang(), existing: article }),
+      })
+      if (!res.ok) throw new Error('API error')
+      const data = await res.json()
+      setArticle((prev) => prev + '\n\n' + data.article)
     } catch {
       setError(t(lang, 'error-gen'))
     } finally {
@@ -541,6 +565,9 @@ function App() {
                 </button>
               </div>
               <div className="article-header-actions">
+                <button className="header-btn" onClick={handleContinueWriting} disabled={articleLoading}>
+                  {articleLoading ? t(lang, 'continuing') : t(lang, 'continue')}
+                </button>
                 <button className="header-btn" onClick={copyArticle}>{t(lang, 'copy')}</button>
                 <button className="close-btn" onClick={() => setArticle('')}>✕</button>
               </div>
