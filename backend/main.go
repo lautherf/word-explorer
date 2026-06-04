@@ -10,11 +10,14 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 var (
-	openrouterKey   string
-	openrouterModel string
+	llmAPIKey   string
+	llmModel    string
+	llmBaseURL  string
+	httpClient  = &http.Client{Timeout: 45 * time.Second}
 )
 
 type ExploreRequest struct {
@@ -37,7 +40,7 @@ type GenerateResponse struct {
 
 func callLLM(systemPrompt, userPrompt string) (string, error) {
 	body := map[string]interface{}{
-		"model": openrouterModel,
+		"model": llmModel,
 		"messages": []map[string]string{
 			{"role": "system", "content": systemPrompt},
 			{"role": "user", "content": userPrompt},
@@ -46,12 +49,11 @@ func callLLM(systemPrompt, userPrompt string) (string, error) {
 	}
 	b, _ := json.Marshal(body)
 
-	req, _ := http.NewRequest("POST", "https://openrouter.ai/api/v1/chat/completions", bytes.NewReader(b))
-	req.Header.Set("Authorization", "Bearer "+openrouterKey)
+	req, _ := http.NewRequest("POST", llmBaseURL+"/chat/completions", bytes.NewReader(b))
+	req.Header.Set("Authorization", "Bearer "+llmAPIKey)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("HTTP-Referer", "http://localhost:8080")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("http call: %w", err)
 	}
@@ -218,7 +220,7 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 	wordList := strings.Join(req.Words, ", ")
 	system := "You are a skilled writer."
 	langInstr := " Write the article in the same language as the keywords."
-	userPrompt := fmt.Sprintf("Write a short, engaging article (about 300-500 words) that incorporates these keywords: [%s]. The article should be well-structured with a title and paragraphs.%s", wordList, langInstr)
+	userPrompt := fmt.Sprintf("Write a very short article (about 100-150 words) that incorporates these keywords: [%s]. The article should have a title and 2-3 brief paragraphs.%s", wordList, langInstr)
 
 	content, err := callLLM(system, userPrompt)
 	if err != nil {
@@ -254,13 +256,22 @@ func (g *gzipResponseWriter) Write(b []byte) (int, error) {
 }
 
 func main() {
-	openrouterKey = os.Getenv("OPENROUTER_API_KEY")
-	openrouterModel = os.Getenv("OPENROUTER_MODEL")
-	if openrouterKey == "" {
-		log.Fatal("OPENROUTER_API_KEY not set")
+	llmAPIKey = os.Getenv("DEEPSEEK_API_KEY")
+	if llmAPIKey == "" {
+		llmAPIKey = os.Getenv("OPENROUTER_API_KEY")
 	}
-	if openrouterModel == "" {
-		openrouterModel = "openrouter/free"
+	if llmAPIKey == "" {
+		log.Fatal("DEEPSEEK_API_KEY or OPENROUTER_API_KEY not set")
+	}
+
+	llmModel = os.Getenv("LLM_MODEL")
+	if llmModel == "" {
+		llmModel = "deepseek-v4-flash"
+	}
+
+	llmBaseURL = os.Getenv("LLM_BASE_URL")
+	if llmBaseURL == "" {
+		llmBaseURL = "https://api.deepseek.com/v1"
 	}
 
 	http.HandleFunc("/api/explore", handleExplore)

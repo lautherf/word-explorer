@@ -15,6 +15,6 @@ cp -r frontend/dist backend/static
 echo "=== Building Backend ==="
 cd backend && go build -o app . && cd ..
 
-# Run backend (requires OPENROUTER_API_KEY)
+# Run backend (requires DEEPSEEK_API_KEY or OPENROUTER_API_KEY)
 echo "=== Starting Backend on :8080 ==="
-cd backend && OPENROUTER_API_KEY="$OPENROUTER_API_KEY" ./app
+cd backend && DEEPSEEK_API_KEY="$DEEPSEEK_API_KEY" ./app
