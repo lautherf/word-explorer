@@ -18,6 +18,7 @@ const zh: Record<string, string> = {
   'error-api': 'API 失败', 'error-gen': '生成文章失败', 'error-extract': '提取关键词失败',
   'settings': '设置', 'add-to-col': '添加到集合',
   'export': '导出集合', 'import': '导入覆盖',
+  'tab-background': '背景设定',
   'click-hint': '点击词卡选中，多个选中后点"探索"',
 }
 
@@ -34,6 +35,7 @@ const en: Record<string, string> = {
   'error-api': 'API error', 'error-gen': 'Failed to generate article', 'error-extract': 'Failed to extract keywords',
   'settings': 'Settings', 'add-to-col': 'Add to collection',
   'export': 'Export', 'import': 'Import & Overwrite',
+  'tab-background': 'Background',
   'click-hint': 'Click words to select, then click "Explore"',
 }
 
@@ -56,7 +58,7 @@ function loadLang(): Lang {
   return v === 'zh' || v === 'en' ? v : 'zh'
 }
 
-type Tab = 'explore' | 'article' | 'extract'
+type Tab = 'explore' | 'article' | 'extract' | 'background'
 
 function App() {
   const [lang, setLang] = useState<Lang>(loadLang)
@@ -79,6 +81,8 @@ function App() {
   const [articleLoading, setArticleLoading] = useState(false)
   const [textInput, setTextInput] = useState('')
   const [extracting, setExtracting] = useState(false)
+  const [backgroundText, setBackgroundText] = useState(() => localStorage.getItem('word-explorer-bg') || '')
+  useEffect(() => { localStorage.setItem('word-explorer-bg', backgroundText) }, [backgroundText])
 
   const [expandedCol, setExpandedCol] = useState<string | null>(null)
   const [colWordInput, setColWordInput] = useState('')
@@ -149,6 +153,14 @@ function App() {
     setManualInput('')
   }
 
+  function buildNamespaces(): Record<string, string[]> {
+    const ns: Record<string, string[]> = {}
+    for (const c of collections) {
+      if (c.checked && c.words.length > 0) ns[c.name] = c.words
+    }
+    return ns
+  }
+
   async function handleGenerate() {
     const seeds = allSeedWords()
     if (seeds.length === 0) return
@@ -158,7 +170,7 @@ function App() {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ words: seeds, lang }),
+        body: JSON.stringify({ words: seeds, lang, namespaces: buildNamespaces(), background: backgroundText }),
       })
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
@@ -176,7 +188,7 @@ function App() {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ words: seeds, lang, existing: article }),
+        body: JSON.stringify({ words: seeds, lang, existing: article, namespaces: buildNamespaces(), background: backgroundText }),
       })
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
@@ -351,7 +363,7 @@ function App() {
         {error && <div className="error">{error}</div>}
 
         <nav className="main-tabs">
-          {(['explore', 'article', 'extract'] as Tab[]).map((tab) => (
+          {(['explore', 'article', 'extract', 'background'] as Tab[]).map((tab) => (
             <button key={tab} className={`main-tab ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
               {t(lang, `tab-${tab}` as any)}
             </button>
@@ -400,6 +412,12 @@ function App() {
             <button className="extract-btn" onClick={handleExtract} disabled={extracting || !textInput.trim()}>
               {extracting ? t(lang, 'extracting') : t(lang, 'extract')}
             </button>
+          </section>
+        )}
+
+        {!loading && activeTab === 'background' && (
+          <section className="extract-panel">
+            <textarea value={backgroundText} onChange={(e) => setBackgroundText(e.target.value)} placeholder={lang === 'zh' ? '在此编写世界观、故事背景、设定说明…' : 'Write your world-building, story background, setting notes here...'} rows={12} />
           </section>
         )}
       </main>

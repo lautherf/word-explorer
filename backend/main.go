@@ -30,9 +30,11 @@ type ExploreResponse struct {
 }
 
 type GenerateRequest struct {
-	Words    []string `json:"words"`
-	Lang     string   `json:"lang"`
-	Existing string   `json:"existing"`
+	Words      []string            `json:"words"`
+	Lang       string              `json:"lang"`
+	Existing   string              `json:"existing"`
+	Namespaces map[string][]string `json:"namespaces"`
+	Background string              `json:"background"`
 }
 
 type GenerateResponse struct {
@@ -238,11 +240,27 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 	targetWords := 80 + n*30
 	system := "You are a skilled writer."
 	lengthInstr := fmt.Sprintf(" Write about %d words.", targetWords)
+
+	var nsBuilder strings.Builder
+	for name, words := range req.Namespaces {
+		if len(words) > 0 {
+			fmt.Fprintf(&nsBuilder, "  %s: %s\n", name, strings.Join(words, ", "))
+		}
+	}
+	nsStr := nsBuilder.String()
+
 	var userPrompt string
 	if req.Existing != "" {
 		userPrompt = fmt.Sprintf("Continue writing the following article. Use these concepts as thematic direction: [%s]. Maintain the same style and language. Do not repeat what has already been written.\n\nExisting article:\n%s\n\nContinue from here:%s%s%s", wordList, req.Existing, langInstr, lengthInstr, guidance)
 	} else {
 		userPrompt = fmt.Sprintf("Write an article that is inspired by these concepts: [%s]. The article should have a title and paragraphs.%s%s%s", wordList, langInstr, lengthInstr, guidance)
+	}
+
+	if req.Background != "" {
+		userPrompt = fmt.Sprintf("Background / Setting:\n%s\n\n%s", req.Background, userPrompt)
+	}
+	if nsStr != "" {
+		userPrompt += "\n\nElement categories:\n" + nsStr
 	}
 
 	content, err := callLLM(system, userPrompt)
