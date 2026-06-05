@@ -234,12 +234,18 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 	langInstr := fmt.Sprintf(" Write the article in %s.", langName)
 	guidance := " Use the following concepts as high-level thematic guidance — the article should be related to them in spirit and direction, but you don't need to force every single one into the text."
 	wordList := strings.Join(req.Words, ", ")
+	n := len(req.Words)
+	targetWords := 80 + n*30
+	if targetWords > 500 {
+		targetWords = 500
+	}
 	system := "You are a skilled writer."
+	lengthInstr := fmt.Sprintf(" Write about %d words.", targetWords)
 	var userPrompt string
 	if req.Existing != "" {
-		userPrompt = fmt.Sprintf("Continue writing the following article. Use these concepts as thematic direction: [%s]. Maintain the same style and language. Do not repeat what has already been written.\n\nExisting article:\n%s\n\nContinue from here:%s%s", wordList, req.Existing, langInstr, guidance)
+		userPrompt = fmt.Sprintf("Continue writing the following article. Use these concepts as thematic direction: [%s]. Maintain the same style and language. Do not repeat what has already been written.\n\nExisting article:\n%s\n\nContinue from here:%s%s%s", wordList, req.Existing, langInstr, lengthInstr, guidance)
 	} else {
-		userPrompt = fmt.Sprintf("Write a very short article (about 100-150 words) that is inspired by these concepts: [%s]. The article should have a title and 2-3 brief paragraphs. Stay broadly on topic, but don't force every keyword in.%s%s", wordList, langInstr, guidance)
+		userPrompt = fmt.Sprintf("Write an article that is inspired by these concepts: [%s]. The article should have a title and paragraphs.%s%s%s", wordList, langInstr, lengthInstr, guidance)
 	}
 
 	content, err := callLLM(system, userPrompt)
