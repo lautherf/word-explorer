@@ -16,6 +16,7 @@ const zh: Record<string, string> = {
   'extract-placeholder': '粘贴或输入文本...', 'extract': '🔍 提取关键词', 'extracting': '提取中...',
   'error-api': 'API 失败', 'error-gen': '生成文章失败', 'error-extract': '提取关键词失败',
   'settings': '设置', 'add-to-col': '添加到集合',
+  'export': '导出集合', 'import': '导入覆盖',
   'click-hint': '点击词卡选中，多个选中后点"探索"',
 }
 
@@ -31,6 +32,7 @@ const en: Record<string, string> = {
   'extract-placeholder': 'Paste or type text...', 'extract': '🔍 Extract Keywords', 'extracting': 'Extracting...',
   'error-api': 'API error', 'error-gen': 'Failed to generate article', 'error-extract': 'Failed to extract keywords',
   'settings': 'Settings', 'add-to-col': 'Add to collection',
+  'export': 'Export', 'import': 'Import & Overwrite',
   'click-hint': 'Click words to select, then click "Explore"',
 }
 
@@ -218,6 +220,30 @@ function App() {
     setCollections((prev) => prev.map((c) => c.id === colId && !c.words.includes(w) ? { ...c, words: [...c.words, w] } : c))
     setColWordInput('')
   }
+  function exportCollections() {
+    const blob = new Blob([JSON.stringify(collections, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = 'word-explorer-collections.json'
+    a.click(); URL.revokeObjectURL(url)
+  }
+
+  function importCollections(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result as string)
+        if (Array.isArray(data)) {
+          setCollections(data)
+        }
+      } catch {}
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
   function copyArticle() {
     const ta = document.createElement('textarea')
     ta.value = article; ta.style.position = 'fixed'; ta.style.opacity = '0'
@@ -242,6 +268,10 @@ function App() {
           </div>
         )}
         {centerWords.length > 0 && <button className="save-col-btn" onClick={saveCollection}>{t(lang, 'save-center')}</button>}
+        <div className="sidebar-io">
+          <button className="io-btn" onClick={exportCollections} disabled={collections.length === 0}>{t(lang, 'export')}</button>
+          <label className="io-btn io-label">{t(lang, 'import')}<input type="file" accept=".json" onChange={importCollections} hidden /></label>
+        </div>
         <div className="collection-list">
           {collections.length === 0 && <p className="empty-hint">{t(lang, 'no-collections')}</p>}
           {collections.map((c) => {

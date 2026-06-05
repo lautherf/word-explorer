@@ -44,8 +44,19 @@
 .setting-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: #e5e7eb; cursor: pointer }
 .setting-row input[type="checkbox"] { accent-color: #818cf8; width: 16px; height: 16px; cursor: pointer }
 
+.sidebar-io { display: flex; gap: 6px; margin-bottom: 12px }
+.io-btn {
+  flex: 1; text-align: center; padding: 7px 0; font-size: 12px; font-weight: 600;
+  background: #1f2937; color: #9ca3af; border: 1px solid #374151; border-radius: 6px;
+  cursor: pointer; transition: all 0.2s;
+}
+.io-btn:hover:not(:disabled) { border-color: #818cf8; color: #818cf8; background: #1e1b3a }
+.io-btn:disabled { opacity: 0.3; cursor: not-allowed }
+.io-label { display: block; cursor: pointer }
+.io-label:active { transform: scale(0.97) }
+
 .save-col-btn {
-  width: 100%; padding: 9px 0; margin-bottom: 16px;
+  width: 100%; padding: 9px 0; margin-bottom: 12px;
   background: linear-gradient(135deg, #818cf8, #c084fc); color: #000; border: none;
   border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;
 }
