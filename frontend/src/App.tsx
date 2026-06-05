@@ -135,12 +135,14 @@ function App() {
 
   function handleExplore() {
     if (centerWords.length === 0 && activeCollectionWords().length === 0) return
-    const seeds = selectedWords.size > 0
-      ? [...new Set([...Array.from(selectedWords), ...activeCollectionWords()])]
-      : [...new Set([...centerWords, ...activeCollectionWords()])]
-    const deduped = [...new Set([...centerWords, ...seeds])]
+
+    const fromGrid = selectedWords.size > 0 ? Array.from(selectedWords) : centerWords
+    const seeds = [...new Set([...fromGrid, ...activeCollectionWords()])]
+
+    if (selectedWords.size > 0) {
+      setCenterWords((prev) => [...new Set([...prev, ...Array.from(selectedWords)])])
+    }
     setHistory([...history, { words: centerWords, label: centerWords.join(', ') }])
-    setCenterWords(deduped)
     setArticle('')
     explore(seeds)
   }
