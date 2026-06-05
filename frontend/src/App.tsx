@@ -280,14 +280,11 @@ function App() {
       const data = yaml.load(text) as any[]
       if (Array.isArray(data)) {
         const groups = new Map<string, { words: string[]; checked: boolean }>()
-        let curNs = ''
         for (const item of data) {
-          if (item.namespace) {
-            curNs = item.namespace
-            if (!groups.has(curNs)) groups.set(curNs, { words: [], checked: !!item.checked })
-          } else if (item.name && curNs) {
-            const g = groups.get(curNs)!
-            g.words.push(item.name)
+          const ns = item.namespace
+          if (ns) {
+            const words = item.name
+            groups.set(ns, { words: Array.isArray(words) ? words : [], checked: !!item.checked })
           } else if (item.name && Array.isArray(item.words)) {
             groups.set(item.name, { words: item.words, checked: !!item.checked })
           }
@@ -303,14 +300,8 @@ function App() {
   }
 
   function exportCollections() {
-    const lines: any[] = []
-    for (const c of collections) {
-      lines.push({ namespace: c.name, checked: c.checked })
-      for (const w of c.words) {
-        lines.push({ name: w })
-      }
-    }
-    const yamlStr = yaml.dump(lines, { indent: 2 })
+    const data = collections.map(({ name, words, checked }) => ({ namespace: name, checked, name: words }))
+    const yamlStr = yaml.dump(data, { indent: 2 })
     const blob = new Blob([yamlStr], { type: 'text/yaml' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -327,16 +318,11 @@ function App() {
         const data = yaml.load(reader.result as string) as any[]
         if (Array.isArray(data)) {
           const groups = new Map<string, { words: string[]; checked: boolean }>()
-          let curNs = ''
-          let curChecked = false
           for (const item of data) {
-            if (item.namespace) {
-              curNs = item.namespace
-              curChecked = !!item.checked
-              if (!groups.has(curNs)) groups.set(curNs, { words: [], checked: curChecked })
-            } else if (item.name && curNs) {
-              const g = groups.get(curNs)!
-              g.words.push(item.name)
+            const ns = item.namespace
+            if (ns) {
+              const words = item.name
+              groups.set(ns, { words: Array.isArray(words) ? words : [], checked: !!item.checked })
             } else if (item.name && Array.isArray(item.words)) {
               groups.set(item.name, { words: item.words, checked: !!item.checked })
             }
