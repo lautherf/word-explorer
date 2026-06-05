@@ -352,72 +352,18 @@
 
 .header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .header h1 {
-  margin: 0 0 18px;
-  font-size: 30px;
+  margin: 0;
+  font-size: 26px;
   font-weight: 700;
   background: linear-gradient(135deg, #f9fafb 30%, #818cf8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.02em;
-}
-
-.search-bar {
-  display: flex;
-  gap: 8px;
-  max-width: 520px;
-  margin: 0 auto;
-}
-
-.search-bar input {
-  flex: 1;
-  padding: 11px 18px;
-  border: 1px solid #1f2937;
-  border-radius: 10px;
-  font-size: 15px;
-  background: #1a1a24;
-  color: #f9fafb;
-  outline: none;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.search-bar input::placeholder { color: #4b5563 }
-
-.search-bar input:focus {
-  border-color: #818cf8;
-  box-shadow: 0 0 0 3px rgba(129,140,248,0.1);
-}
-
-.search-bar button {
-  padding: 11px 28px;
-  background: linear-gradient(135deg, #818cf8, #c084fc);
-  color: #000;
-  border: none;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  letter-spacing: 0.02em;
-}
-
-.search-bar button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(129,140,248,0.3);
-}
-
-.search-bar button:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.search-bar button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
 }
 
 .breadcrumb {
@@ -680,21 +626,20 @@
 }
 
 .explore-btn {
-  padding: 11px 32px;
-  background: linear-gradient(135deg, #10b981, #059669);
+  padding: 9px 24px;
+  background: linear-gradient(135deg, #818cf8, #c084fc);
   color: #000;
   border: none;
-  border-radius: 10px;
-  font-size: 15px;
+  border-radius: 9px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
-  letter-spacing: 0.02em;
 }
 
 .explore-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(16,185,129,0.3);
+  box-shadow: 0 4px 16px rgba(129,140,248,0.3);
 }
 
 .explore-btn:active:not(:disabled) {

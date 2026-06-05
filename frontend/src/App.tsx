@@ -10,15 +10,13 @@ const zh: Record<string, string> = {
   'no-collections': '暂无集合',
   'active-hint': '已勾选的集合会参与 LLM 种子',
   'title': '词网探索',
-  'seed-placeholder': '输入种子词...',
   'explore': '探索',
   'manual-placeholder': '键入词后添加...',
   'add': '+ 添加',
   'generate': '✍ 生成文章',
   'generating': '写作中...',
   'thinking': '思考中...',
-  'explore-selected': '探索',
-  'explore-hint': '点击词卡探索更深关联 · 输入新词重置探索',
+  'explore-hint': '点击词卡探索更深关联',
   'article': '文章',
   'text-input': '文本输入',
   'copy': '📋 复制',
@@ -40,15 +38,13 @@ const en: Record<string, string> = {
   'no-collections': 'No collections yet',
   'active-hint': 'Active collections contribute to LLM seeds',
   'title': 'Word Explorer',
-  'seed-placeholder': 'Enter a seed word...',
   'explore': 'Explore',
   'manual-placeholder': 'Type a word to add...',
   'add': '+ Add',
   'generate': '✍ Generate Article',
   'generating': 'Writing...',
   'thinking': 'Thinking...',
-  'explore-selected': 'Explore',
-  'explore-hint': 'Click a word to go deeper · New seed resets exploration',
+  'explore-hint': 'Click a word to explore deeper',
   'article': 'Article',
   'text-input': 'Text Input',
   'copy': '📋 Copy',
@@ -102,7 +98,6 @@ function App() {
   const [lang, setLang] = useState<Lang>(loadLang)
   useEffect(() => { localStorage.setItem(LANG_KEY, lang) }, [lang])
 
-  const [seedInput, setSeedInput] = useState('')
   const [currentWords, setCurrentWords] = useState<string[]>([])
   const [centerWords, setCenterWords] = useState<string[]>([])
   const [history, setHistory] = useState<HistoryEntry[]>([])
@@ -133,12 +128,6 @@ function App() {
     return [...new Set([...centerWords, ...activeCollectionWords()])]
   }
 
-  function apiLang(): string {
-    const firstWord = [...centerWords, ...seedInput.split(' ')].find(Boolean)
-    if (!firstWord) return lang
-    return /[\u4e00-\u9fff]/.test(firstWord) ? 'zh' : 'en'
-  }
-
   async function explore(words: string[]) {
     setLoading(true)
     setError('')
@@ -146,7 +135,7 @@ function App() {
       const res = await fetch('/api/explore', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ words, lang: apiLang() }),
+        body: JSON.stringify({ words, lang }),
       })
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
@@ -159,19 +148,10 @@ function App() {
   }
 
   function handleExplore() {
-    const trimmed = seedInput.trim()
-
-    if (trimmed) {
-      setCenterWords([trimmed])
-      setHistory([])
-      setSeedInput('')
-      setArticle('')
-      explore([trimmed])
-    } else if (centerWords.length > 0) {
-      setHistory([...history, { words: centerWords, label: centerWords.join(', ') }])
-      setArticle('')
-      explore(centerWords)
-    }
+    if (centerWords.length === 0) return
+    setHistory([...history, { words: centerWords, label: centerWords.join(', ') }])
+    setArticle('')
+    explore(centerWords)
   }
 
   function handleWordClick(word: string) {
@@ -390,17 +370,6 @@ function App() {
       <main className="main">
         <header className="header">
           <h1>{t(lang, 'title')}</h1>
-          <div className="search-bar">
-            <input
-              value={seedInput}
-              onChange={(e) => setSeedInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleExplore()}
-              placeholder={t(lang, 'seed-placeholder')}
-            />
-            <button onClick={handleExplore} disabled={loading || (!seedInput.trim() && centerWords.length === 0)}>
-              {t(lang, 'explore')}
-            </button>
-          </div>
         </header>
 
         {history.length > 0 && (
@@ -429,6 +398,9 @@ function App() {
             <input value={manualInput} onChange={(e) => setManualInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleManualAdd()} placeholder={t(lang, 'manual-placeholder')} />
             <button onClick={handleManualAdd} disabled={!manualInput.trim()}>{t(lang, 'add')}</button>
           </div>
+          <button className="explore-btn" onClick={handleExplore} disabled={loading || centerWords.length === 0}>
+            {t(lang, 'explore')}
+          </button>
           {allSeedWords().length > 0 && (
             <button className="generate-btn" onClick={handleGenerate} disabled={articleLoading}>
               {articleLoading ? t(lang, 'generating') : t(lang, 'generate')}
