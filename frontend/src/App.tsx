@@ -5,107 +5,68 @@ import './App.css'
 type Lang = 'zh' | 'en'
 
 const zh: Record<string, string> = {
-  'collections': '集合',
-  'save-center': '+ 保存中央词',
-  'no-collections': '暂无集合',
-  'active-hint': '已勾选的集合会参与 LLM 种子',
-  'title': '词网探索',
-  'explore': '探索',
-  'manual-placeholder': '键入词后添加...',
-  'add': '+ 添加',
-  'generate': '✍ 生成文章',
-  'generating': '写作中...',
+  'collections': '集合', 'save-center': '+ 保存中央词',
+  'no-collections': '暂无集合', 'active-hint': '已勾选的集合会参与 LLM 种子',
+  'title': '词网探索', 'explore': '探索',
+  'manual-placeholder': '键入词后添加...', 'add': '+ 添加',
+  'generate': '✍ 生成文章', 'generating': '写作中...',
   'thinking': '思考中...',
-  'explore-hint': '点击词卡探索更深关联',
-  'article': '文章',
-  'text-input': '文本输入',
-  'copy': '📋 复制',
-  'extract-placeholder': '粘贴或输入文本...',
-  'extract': '🔍 提取关键词',
-  'extracting': '提取中...',
-  'error-api': 'API 失败，后端是否在运行？',
-  'error-gen': '生成文章失败',
-  'error-extract': '提取关键词失败',
-  'settings': '设置',
-  'continue': '续写',
-  'continuing': '续写中...',
-  'add-to-col': '添加到集合',
+  'tab-explore': '探索结果', 'tab-article': '生成文章', 'tab-extract': '文章解析',
+  'copy': '📋 复制', 'continue': '续写', 'continuing': '续写中...',
+  'extract-placeholder': '粘贴或输入文本...', 'extract': '🔍 提取关键词', 'extracting': '提取中...',
+  'error-api': 'API 失败', 'error-gen': '生成文章失败', 'error-extract': '提取关键词失败',
+  'settings': '设置', 'add-to-col': '添加到集合',
+  'click-hint': '点击词卡选中，多个选中后点"探索"',
 }
 
 const en: Record<string, string> = {
-  'collections': 'Collections',
-  'save-center': '+ Save Center Words',
-  'no-collections': 'No collections yet',
-  'active-hint': 'Active collections contribute to LLM seeds',
-  'title': 'Word Explorer',
-  'explore': 'Explore',
-  'manual-placeholder': 'Type a word to add...',
-  'add': '+ Add',
-  'generate': '✍ Generate Article',
-  'generating': 'Writing...',
+  'collections': 'Collections', 'save-center': '+ Save Center Words',
+  'no-collections': 'No collections yet', 'active-hint': 'Active collections contribute to LLM seeds',
+  'title': 'Word Explorer', 'explore': 'Explore',
+  'manual-placeholder': 'Type a word to add...', 'add': '+ Add',
+  'generate': '✍ Generate Article', 'generating': 'Writing...',
   'thinking': 'Thinking...',
-  'explore-hint': 'Click a word to explore deeper',
-  'article': 'Article',
-  'text-input': 'Text Input',
-  'copy': '📋 Copy',
-  'extract-placeholder': 'Paste or type text...',
-  'extract': '🔍 Extract Keywords',
-  'extracting': 'Extracting...',
-  'error-api': 'Failed to explore. Is the backend running?',
-  'error-gen': 'Failed to generate article',
-  'error-extract': 'Failed to extract keywords',
-  'settings': 'Settings',
-  'continue': 'Continue',
-  'continuing': 'Continuing...',
-  'add-to-col': 'Add to collection',
+  'tab-explore': 'Results', 'tab-article': 'Article', 'tab-extract': 'Extract',
+  'copy': '📋 Copy', 'continue': 'Continue', 'continuing': 'Continuing...',
+  'extract-placeholder': 'Paste or type text...', 'extract': '🔍 Extract Keywords', 'extracting': 'Extracting...',
+  'error-api': 'API error', 'error-gen': 'Failed to generate article', 'error-extract': 'Failed to extract keywords',
+  'settings': 'Settings', 'add-to-col': 'Add to collection',
+  'click-hint': 'Click words to select, then click "Explore"',
 }
 
-function t(lang: Lang, key: string, ...args: string[]): string {
+function t(lang: Lang, key: string): string {
   const map = lang === 'zh' ? zh : en
-  let s = map[key] ?? key
-  args.forEach((a, i) => { s = s.replace(`{${i}}`, a) })
-  return s
+  return map[key] ?? key
 }
 
-interface Collection {
-  id: string
-  name: string
-  words: string[]
-  checked: boolean
-}
-
-interface HistoryEntry {
-  words: string[]
-  label: string
-}
+interface Collection { id: string; name: string; words: string[]; checked: boolean }
+interface HistoryEntry { words: string[]; label: string }
 
 const STORAGE_KEY = 'word-explorer-collections'
 const LANG_KEY = 'word-explorer-lang'
 
 function loadCollections(): Collection[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] }
 }
-
 function loadLang(): Lang {
   const v = localStorage.getItem(LANG_KEY)
   return v === 'zh' || v === 'en' ? v : 'zh'
 }
+
+type Tab = 'explore' | 'article' | 'extract'
 
 function App() {
   const [lang, setLang] = useState<Lang>(loadLang)
   useEffect(() => { localStorage.setItem(LANG_KEY, lang) }, [lang])
 
   const [currentWords, setCurrentWords] = useState<string[]>([])
+  const [selectedWords, setSelectedWords] = useState<Set<string>>(new Set())
   const [centerWords, setCenterWords] = useState<string[]>([])
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const [showSettings, setShowSettings] = useState(false)
-
   const [manualInput, setManualInput] = useState('')
 
   const [collections, setCollections] = useState<Collection[]>(loadCollections)
@@ -113,17 +74,16 @@ function App() {
 
   const [article, setArticle] = useState('')
   const [articleLoading, setArticleLoading] = useState(false)
-  const [articleMode, setArticleMode] = useState<'article' | 'input'>('article')
   const [textInput, setTextInput] = useState('')
   const [extracting, setExtracting] = useState(false)
 
   const [expandedCol, setExpandedCol] = useState<string | null>(null)
   const [colWordInput, setColWordInput] = useState('')
+  const [activeTab, setActiveTab] = useState<Tab>('explore')
 
   function activeCollectionWords(): string[] {
     return collections.filter((c) => c.checked).flatMap((c) => c.words)
   }
-
   function allSeedWords(): string[] {
     return [...new Set([...centerWords, ...activeCollectionWords()])]
   }
@@ -140,26 +100,27 @@ function App() {
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
       setCurrentWords(data.words)
+      setSelectedWords(new Set())
+      setActiveTab('explore')
     } catch {
       setError(t(lang, 'error-api'))
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   function handleExplore() {
     if (centerWords.length === 0) return
+    const seeds = selectedWords.size > 0 ? Array.from(selectedWords) : centerWords
     setHistory([...history, { words: centerWords, label: centerWords.join(', ') }])
     setArticle('')
-    explore(centerWords)
+    explore(seeds)
   }
 
-  function handleWordClick(word: string) {
-    const deduped = [...new Set([...centerWords, word])]
-    setHistory([...history, { words: centerWords, label: centerWords.join(', ') }])
-    setCenterWords(deduped)
-    setArticle('')
-    explore([word])
+  function toggleWord(word: string) {
+    setSelectedWords((prev) => {
+      const next = new Set(prev)
+      if (next.has(word)) next.delete(word); else next.add(word)
+      return next
+    })
   }
 
   function removeCenterWord(word: string) {
@@ -171,6 +132,7 @@ function App() {
     setHistory(history.slice(0, index))
     setCenterWords(entry.words)
     setCurrentWords([])
+    setSelectedWords(new Set())
     setArticle('')
   }
 
@@ -186,7 +148,6 @@ function App() {
     if (seeds.length === 0) return
     setArticleLoading(true)
     setArticle('')
-    setArticleMode('article')
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
@@ -196,11 +157,9 @@ function App() {
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
       setArticle(data.article)
-    } catch {
-      setError(t(lang, 'error-gen'))
-    } finally {
-      setArticleLoading(false)
-    }
+      setActiveTab('article')
+    } catch { setError(t(lang, 'error-gen'))
+    } finally { setArticleLoading(false) }
   }
 
   async function handleContinueWriting() {
@@ -216,11 +175,8 @@ function App() {
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
       setArticle((prev) => prev + '\n\n' + data.article)
-    } catch {
-      setError(t(lang, 'error-gen'))
-    } finally {
-      setArticleLoading(false)
-    }
+    } catch { setError(t(lang, 'error-gen'))
+    } finally { setArticleLoading(false) }
   }
 
   async function handleExtract() {
@@ -238,91 +194,49 @@ function App() {
       const newWords = data.words.filter((w: string) => !centerWords.includes(w))
       setCenterWords((prev) => [...prev, ...newWords])
       setTextInput('')
-    } catch {
-      setError(t(lang, 'error-extract'))
-    } finally {
-      setExtracting(false)
-    }
+    } catch { setError(t(lang, 'error-extract'))
+    } finally { setExtracting(false) }
   }
 
   function saveCollection() {
     if (centerWords.length === 0) return
-    const name = `${t(lang, 'collections')} ${collections.length + 1}`
-    setCollections([
-      ...collections,
-      { id: Date.now().toString(), name, words: [...centerWords], checked: false },
-    ])
+    setCollections([...collections, { id: Date.now().toString(), name: `${t(lang, 'collections')} ${collections.length + 1}`, words: [...centerWords], checked: false }])
     setCenterWords([])
   }
-
-  function toggleCollection(id: string) {
-    setCollections((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, checked: !c.checked } : c))
-    )
-  }
-
-  function deleteCollection(id: string) {
-    setCollections((prev) => prev.filter((c) => c.id !== id))
-  }
-
-  function renameCollection(id: string, name: string) {
-    setCollections((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, name } : c))
-    )
-  }
-
-  function removeCollectionWord(colId: string, word: string) {
-    setCollections((prev) =>
-      prev.map((c) => c.id === colId ? { ...c, words: c.words.filter((w) => w !== word) } : c)
-    )
-  }
-
+  function toggleCollection(id: string) { setCollections((prev) => prev.map((c) => c.id === id ? { ...c, checked: !c.checked } : c)) }
+  function deleteCollection(id: string) { setCollections((prev) => prev.filter((c) => c.id !== id)) }
+  function renameCollection(id: string, name: string) { setCollections((prev) => prev.map((c) => c.id === id ? { ...c, name } : c)) }
+  function removeCollectionWord(colId: string, word: string) { setCollections((prev) => prev.map((c) => c.id === colId ? { ...c, words: c.words.filter((w) => w !== word) } : c)) }
   function addCollectionWord(colId: string) {
     const w = colWordInput.trim()
     if (!w) return
-    setCollections((prev) =>
-      prev.map((c) => c.id === colId && !c.words.includes(w) ? { ...c, words: [...c.words, w] } : c)
-    )
+    setCollections((prev) => prev.map((c) => c.id === colId && !c.words.includes(w) ? { ...c, words: [...c.words, w] } : c))
     setColWordInput('')
   }
-
   function copyArticle() {
     const ta = document.createElement('textarea')
-    ta.value = article
-    ta.style.position = 'fixed'
-    ta.style.opacity = '0'
-    document.body.appendChild(ta)
-    ta.select()
-    document.execCommand('copy')
-    document.body.removeChild(ta)
+    ta.value = article; ta.style.position = 'fixed'; ta.style.opacity = '0'
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta)
   }
 
   const hasActiveCollections = collections.some((c) => c.checked)
 
-  function sidebarContent() {
-    return (
-      <>
+  return (
+    <div className="app-layout">
+      <aside className="sidebar">
         <div className="sidebar-top">
           <h2>{t(lang, 'collections')}</h2>
           <div className="sidebar-top-actions">
             <button className="settings-toggle" onClick={() => setShowSettings(!showSettings)} title={t(lang, 'settings')}>⚙</button>
-            <button className="lang-toggle" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
-              {lang === 'zh' ? 'EN' : '中'}
-            </button>
+            <button className="lang-toggle" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>{lang === 'zh' ? 'EN' : '中'}</button>
           </div>
         </div>
-
         {showSettings && (
           <div className="settings-panel">
-            <label className="setting-row">
-              <span>{t(lang, 'settings')}</span>
-            </label>
+            <label className="setting-row"><span>{t(lang, 'settings')}</span></label>
           </div>
         )}
-
-        {centerWords.length > 0 && (
-          <button className="save-col-btn" onClick={saveCollection}>{t(lang, 'save-center')}</button>
-        )}
+        {centerWords.length > 0 && <button className="save-col-btn" onClick={saveCollection}>{t(lang, 'save-center')}</button>}
         <div className="collection-list">
           {collections.length === 0 && <p className="empty-hint">{t(lang, 'no-collections')}</p>}
           {collections.map((c) => {
@@ -335,18 +249,13 @@ function App() {
                     <input className="collect-name" value={c.name} onChange={(e) => renameCollection(c.id, e.target.value)} onClick={(e) => e.stopPropagation()} />
                   </label>
                   <span className="collect-count">{c.words.length}</span>
-                  <button className="collect-expand" onClick={() => setExpandedCol(isExpanded ? null : c.id)}>
-                    {isExpanded ? '▾' : '▸'}
-                  </button>
+                  <button className="collect-expand" onClick={() => setExpandedCol(isExpanded ? null : c.id)}>{isExpanded ? '▾' : '▸'}</button>
                   <button className="collect-del" onClick={() => deleteCollection(c.id)}>✕</button>
                 </div>
                 {isExpanded && (
                   <div className="collection-words">
                     {c.words.map((w) => (
-                      <div key={w} className="collection-word-row">
-                        <span>{w}</span>
-                        <button onClick={() => removeCollectionWord(c.id, w)}>✕</button>
-                      </div>
+                      <div key={w} className="collection-word-row"><span>{w}</span><button onClick={() => removeCollectionWord(c.id, w)}>✕</button></div>
                     ))}
                     <div className="collection-word-add">
                       <input value={colWordInput} onChange={(e) => setColWordInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addCollectionWord(c.id)} placeholder={t(lang, 'add-to-col')} />
@@ -359,18 +268,10 @@ function App() {
           })}
         </div>
         {hasActiveCollections && <p className="collect-hint">{t(lang, 'active-hint')}</p>}
-      </>
-    )
-  }
-
-  return (
-    <div className="app-layout">
-      <aside className="sidebar">{sidebarContent()}</aside>
+      </aside>
 
       <main className="main">
-        <header className="header">
-          <h1>{t(lang, 'title')}</h1>
-        </header>
+        <header className="header"><h1>{t(lang, 'title')}</h1></header>
 
         {history.length > 0 && (
           <nav className="breadcrumb">
@@ -386,9 +287,7 @@ function App() {
         {centerWords.length > 0 && (
           <section className="center-zone">
             {centerWords.map((w) => (
-              <button key={w} className="center-chip" onClick={() => removeCenterWord(w)}>
-                {w} ✕
-              </button>
+              <button key={w} className="center-chip" onClick={() => removeCenterWord(w)}>{w} ✕</button>
             ))}
           </section>
         )}
@@ -398,61 +297,66 @@ function App() {
             <input value={manualInput} onChange={(e) => setManualInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleManualAdd()} placeholder={t(lang, 'manual-placeholder')} />
             <button onClick={handleManualAdd} disabled={!manualInput.trim()}>{t(lang, 'add')}</button>
           </div>
-          <button className="explore-btn" onClick={handleExplore} disabled={loading || centerWords.length === 0}>
-            {t(lang, 'explore')}
+          <button className={`explore-btn ${selectedWords.size > 0 ? 'has-selection' : ''}`} onClick={handleExplore} disabled={loading || centerWords.length === 0}>
+            {t(lang, 'explore')}{selectedWords.size > 0 ? ` (${selectedWords.size})` : ''}
           </button>
-          {allSeedWords().length > 0 && (
-            <button className="generate-btn" onClick={handleGenerate} disabled={articleLoading}>
-              {articleLoading ? t(lang, 'generating') : t(lang, 'generate')}
-            </button>
-          )}
+          <button className="generate-btn" onClick={handleGenerate} disabled={articleLoading || allSeedWords().length === 0}>
+            {articleLoading ? t(lang, 'generating') : t(lang, 'generate')}
+          </button>
         </div>
 
         {error && <div className="error">{error}</div>}
+
+        <nav className="main-tabs">
+          {(['explore', 'article', 'extract'] as Tab[]).map((tab) => (
+            <button key={tab} className={`main-tab ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
+              {t(lang, `tab-${tab}` as any)}
+            </button>
+          ))}
+        </nav>
+
         {loading && <div className="loading">{t(lang, 'thinking')}</div>}
 
-        {currentWords.length > 0 && !loading && (
-          <>
-            <section className="word-grid">
-              {currentWords.map((word) => (
-                <button key={word} className="word-card" onClick={() => handleWordClick(word)}>
-                  {word}
-                </button>
-              ))}
-            </section>
-
-            <div className="actions">
-              <span className="hint">{t(lang, 'explore-hint')}</span>
-            </div>
-          </>
+        {!loading && activeTab === 'explore' && (
+          currentWords.length > 0 ? (
+            <>
+              <section className="word-grid">
+                {currentWords.map((word) => (
+                  <button key={word} className={`word-card ${selectedWords.has(word) ? 'selected' : ''}`} onClick={() => toggleWord(word)}>
+                    {word}
+                  </button>
+                ))}
+              </section>
+              <div className="actions">
+                <span className="hint">{t(lang, 'click-hint')}</span>
+              </div>
+            </>
+          ) : (
+            <div className="empty-state">{t(lang, 'explore')}</div>
+          )
         )}
 
-        {article && (
+        {!loading && activeTab === 'article' && article && (
           <section className="article-panel">
             <div className="article-header">
-              <div className="article-tabs">
-                <button className={`tab ${articleMode === 'article' ? 'active' : ''}`} onClick={() => setArticleMode('article')}>{t(lang, 'article')}</button>
-                <button className={`tab ${articleMode === 'input' ? 'active' : ''}`} onClick={() => setArticleMode('input')}>{t(lang, 'text-input')}</button>
-              </div>
+              <span className="article-header-title">{t(lang, 'tab-article')}</span>
               <div className="article-header-actions">
                 <button className="header-btn" onClick={handleContinueWriting} disabled={articleLoading}>
                   {articleLoading ? t(lang, 'continuing') : t(lang, 'continue')}
                 </button>
                 <button className="header-btn" onClick={copyArticle}>{t(lang, 'copy')}</button>
-                <button className="close-btn" onClick={() => setArticle('')}>✕</button>
               </div>
             </div>
+            <div className="article-content" dangerouslySetInnerHTML={{ __html: marked.parse(article) }} />
+          </section>
+        )}
 
-            {articleMode === 'article' ? (
-              <div className="article-content" dangerouslySetInnerHTML={{ __html: marked.parse(article) }} />
-            ) : (
-              <div className="article-input-area">
-                <textarea value={textInput} onChange={(e) => setTextInput(e.target.value)} placeholder={t(lang, 'extract-placeholder')} rows={8} />
-                <button className="extract-btn" onClick={handleExtract} disabled={extracting || !textInput.trim()}>
-                  {extracting ? t(lang, 'extracting') : t(lang, 'extract')}
-                </button>
-              </div>
-            )}
+        {!loading && activeTab === 'extract' && (
+          <section className="extract-panel">
+            <textarea value={textInput} onChange={(e) => setTextInput(e.target.value)} placeholder={t(lang, 'extract-placeholder')} rows={8} />
+            <button className="extract-btn" onClick={handleExtract} disabled={extracting || !textInput.trim()}>
+              {extracting ? t(lang, 'extracting') : t(lang, 'extract')}
+            </button>
           </section>
         )}
       </main>
