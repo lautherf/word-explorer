@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { marked } from 'marked'
 import './App.css'
 
@@ -10,34 +10,28 @@ const zh: Record<string, string> = {
   'no-collections': '暂无集合',
   'active-hint': '已勾选的集合会参与 LLM 种子',
   'title': '词网探索',
-  'seed-placeholder': '输入一个种子词...',
+  'seed-placeholder': '输入种子词...',
   'explore': '探索',
   'manual-placeholder': '键入词后添加...',
   'add': '+ 添加',
   'generate': '✍ 生成文章',
   'generating': '写作中...',
   'thinking': '思考中...',
-  'click-hint': '点击上方词卡选中',
-  'selected-hint': '个已选中',
-  'explore-selected': '探索选中 →',
+  'explore-selected': '探索',
+  'explore-hint': '点击词卡探索更深关联 · 输入新词重置探索',
   'article': '文章',
   'text-input': '文本输入',
   'copy': '📋 复制',
-  'extract-placeholder': '粘贴或输入文本，然后点击提取关键词...',
+  'extract-placeholder': '粘贴或输入文本...',
   'extract': '🔍 提取关键词',
   'extracting': '提取中...',
   'error-api': 'API 失败，后端是否在运行？',
   'error-gen': '生成文章失败',
   'error-extract': '提取关键词失败',
-  'hover-tip': '悬停 0.5 秒自动选中',
   'settings': '设置',
-  'auto-select': '悬停自动选中',
-  'expand': '展开',
-  'collapse': '收起',
-  'add-to-col': '添加到集合',
-  'del-word': '删除',
   'continue': '续写',
   'continuing': '续写中...',
+  'add-to-col': '添加到集合',
 }
 
 const en: Record<string, string> = {
@@ -53,27 +47,21 @@ const en: Record<string, string> = {
   'generate': '✍ Generate Article',
   'generating': 'Writing...',
   'thinking': 'Thinking...',
-  'click-hint': 'Click words above to select them',
-  'selected-hint': 'selected',
-  'explore-selected': 'Explore Selected →',
+  'explore-selected': 'Explore',
+  'explore-hint': 'Click a word to go deeper · New seed resets exploration',
   'article': 'Article',
   'text-input': 'Text Input',
   'copy': '📋 Copy',
-  'extract-placeholder': 'Paste or type text, then click Extract Keywords...',
+  'extract-placeholder': 'Paste or type text...',
   'extract': '🔍 Extract Keywords',
   'extracting': 'Extracting...',
   'error-api': 'Failed to explore. Is the backend running?',
   'error-gen': 'Failed to generate article',
   'error-extract': 'Failed to extract keywords',
-  'hover-tip': 'Hover 0.5s to auto-select',
   'settings': 'Settings',
-  'auto-select': 'Hover auto-select',
-  'expand': 'Expand',
-  'collapse': 'Collapse',
-  'add-to-col': 'Add to collection',
-  'del-word': 'Delete',
   'continue': 'Continue',
   'continuing': 'Continuing...',
+  'add-to-col': 'Add to collection',
 }
 
 function t(lang: Lang, key: string, ...args: string[]): string {
@@ -97,7 +85,6 @@ interface HistoryEntry {
 
 const STORAGE_KEY = 'word-explorer-collections'
 const LANG_KEY = 'word-explorer-lang'
-const AUTO_SELECT_KEY = 'word-explorer-auto-select'
 
 function loadCollections(): Collection[] {
   try {
@@ -117,13 +104,10 @@ function App() {
 
   const [seedInput, setSeedInput] = useState('')
   const [currentWords, setCurrentWords] = useState<string[]>([])
-  const [selectedWords, setSelectedWords] = useState<Set<string>>(new Set())
   const [centerWords, setCenterWords] = useState<string[]>([])
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
-  const hoverTimers = useRef<Map<string, number>>(new Map())
 
   const [showSettings, setShowSettings] = useState(false)
 
@@ -132,19 +116,14 @@ function App() {
   const [collections, setCollections] = useState<Collection[]>(loadCollections)
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(collections)) }, [collections])
 
-  const [autoSelect, setAutoSelect] = useState(() => {
-    const v = localStorage.getItem(AUTO_SELECT_KEY)
-    return v === null ? false : v === 'true'
-  })
-  useEffect(() => { localStorage.setItem(AUTO_SELECT_KEY, String(autoSelect)) }, [autoSelect])
-  const [expandedCol, setExpandedCol] = useState<string | null>(null)
-  const [colWordInput, setColWordInput] = useState('')
-
   const [article, setArticle] = useState('')
   const [articleLoading, setArticleLoading] = useState(false)
   const [articleMode, setArticleMode] = useState<'article' | 'input'>('article')
   const [textInput, setTextInput] = useState('')
   const [extracting, setExtracting] = useState(false)
+
+  const [expandedCol, setExpandedCol] = useState<string | null>(null)
+  const [colWordInput, setColWordInput] = useState('')
 
   function activeCollectionWords(): string[] {
     return collections.filter((c) => c.checked).flatMap((c) => c.words)
@@ -172,7 +151,6 @@ function App() {
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
       setCurrentWords(data.words)
-      setSelectedWords(new Set())
     } catch {
       setError(t(lang, 'error-api'))
     } finally {
@@ -180,27 +158,28 @@ function App() {
     }
   }
 
-  function handleInitialExplore() {
+  function handleExplore() {
     const trimmed = seedInput.trim()
-    if (!trimmed) return
-    setCenterWords([trimmed])
-    setHistory([])
-    setArticle('')
-    explore([trimmed])
+
+    if (trimmed) {
+      setCenterWords([trimmed])
+      setHistory([])
+      setSeedInput('')
+      setArticle('')
+      explore([trimmed])
+    } else if (centerWords.length > 0) {
+      setHistory([...history, { words: centerWords, label: centerWords.join(', ') }])
+      setArticle('')
+      explore(centerWords)
+    }
   }
 
-  function handleContinueExplore() {
-    const selected = selectedWords.size > 0
-      ? Array.from(selectedWords)
-      : centerWords
-
-    if (selected.length === 0) return
-
-    const deduped = [...new Set([...centerWords, ...selected])]
+  function handleWordClick(word: string) {
+    const deduped = [...new Set([...centerWords, word])]
     setHistory([...history, { words: centerWords, label: centerWords.join(', ') }])
     setCenterWords(deduped)
     setArticle('')
-    explore(selected)
+    explore([word])
   }
 
   function removeCenterWord(word: string) {
@@ -212,31 +191,7 @@ function App() {
     setHistory(history.slice(0, index))
     setCenterWords(entry.words)
     setCurrentWords([])
-    setSelectedWords(new Set())
     setArticle('')
-  }
-
-  function toggleWord(word: string) {
-    setSelectedWords((prev) => {
-      const next = new Set(prev)
-      if (next.has(word)) next.delete(word)
-      else next.add(word)
-      return next
-    })
-  }
-
-  function startHoverTimer(word: string) {
-    if (!autoSelect) return
-    const id = window.setTimeout(() => toggleWord(word), 500)
-    hoverTimers.current.set(word, id)
-  }
-
-  function clearHoverTimer(word: string) {
-    const id = hoverTimers.current.get(word)
-    if (id !== undefined) {
-      clearTimeout(id)
-      hoverTimers.current.delete(word)
-    }
   }
 
   function handleManualAdd() {
@@ -296,7 +251,7 @@ function App() {
       const res = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: txt, lang: apiLang() }),
+        body: JSON.stringify({ text: txt, lang }),
       })
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
@@ -364,15 +319,13 @@ function App() {
 
   const hasActiveCollections = collections.some((c) => c.checked)
 
-  return (
-    <div className="app-layout">
-      <aside className="sidebar">
+  function sidebarContent() {
+    return (
+      <>
         <div className="sidebar-top">
           <h2>{t(lang, 'collections')}</h2>
           <div className="sidebar-top-actions">
-            <button className="settings-toggle" onClick={() => setShowSettings(!showSettings)} title={t(lang, 'settings')}>
-              ⚙
-            </button>
+            <button className="settings-toggle" onClick={() => setShowSettings(!showSettings)} title={t(lang, 'settings')}>⚙</button>
             <button className="lang-toggle" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
               {lang === 'zh' ? 'EN' : '中'}
             </button>
@@ -382,48 +335,27 @@ function App() {
         {showSettings && (
           <div className="settings-panel">
             <label className="setting-row">
-              <span>{t(lang, 'auto-select')}</span>
-              <input
-                type="checkbox"
-                checked={autoSelect}
-                onChange={(e) => setAutoSelect(e.target.checked)}
-              />
+              <span>{t(lang, 'settings')}</span>
             </label>
           </div>
         )}
 
         {centerWords.length > 0 && (
-          <button className="save-col-btn" onClick={saveCollection}>
-            {t(lang, 'save-center')}
-          </button>
+          <button className="save-col-btn" onClick={saveCollection}>{t(lang, 'save-center')}</button>
         )}
         <div className="collection-list">
-          {collections.length === 0 && (
-            <p className="empty-hint">{t(lang, 'no-collections')}</p>
-          )}
+          {collections.length === 0 && <p className="empty-hint">{t(lang, 'no-collections')}</p>}
           {collections.map((c) => {
             const isExpanded = expandedCol === c.id
             return (
               <div key={c.id}>
                 <div className={`collection-item ${c.checked ? 'active' : ''}`}>
                   <label className="collect-label">
-                    <input
-                      type="checkbox"
-                      checked={c.checked}
-                      onChange={() => toggleCollection(c.id)}
-                    />
-                    <input
-                      className="collect-name"
-                      value={c.name}
-                      onChange={(e) => renameCollection(c.id, e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
+                    <input type="checkbox" checked={c.checked} onChange={() => toggleCollection(c.id)} />
+                    <input className="collect-name" value={c.name} onChange={(e) => renameCollection(c.id, e.target.value)} onClick={(e) => e.stopPropagation()} />
                   </label>
                   <span className="collect-count">{c.words.length}</span>
-                  <button
-                    className="collect-expand"
-                    onClick={() => setExpandedCol(isExpanded ? null : c.id)}
-                  >
+                  <button className="collect-expand" onClick={() => setExpandedCol(isExpanded ? null : c.id)}>
                     {isExpanded ? '▾' : '▸'}
                   </button>
                   <button className="collect-del" onClick={() => deleteCollection(c.id)}>✕</button>
@@ -437,12 +369,7 @@ function App() {
                       </div>
                     ))}
                     <div className="collection-word-add">
-                      <input
-                        value={colWordInput}
-                        onChange={(e) => setColWordInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && addCollectionWord(c.id)}
-                        placeholder={t(lang, 'add-to-col')}
-                      />
+                      <input value={colWordInput} onChange={(e) => setColWordInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addCollectionWord(c.id)} placeholder={t(lang, 'add-to-col')} />
                       <button onClick={() => addCollectionWord(c.id)} disabled={!colWordInput.trim()}>+</button>
                     </div>
                   </div>
@@ -451,10 +378,14 @@ function App() {
             )
           })}
         </div>
-        {hasActiveCollections && (
-          <p className="collect-hint">{t(lang, 'active-hint')}</p>
-        )}
-      </aside>
+        {hasActiveCollections && <p className="collect-hint">{t(lang, 'active-hint')}</p>}
+      </>
+    )
+  }
+
+  return (
+    <div className="app-layout">
+      <aside className="sidebar">{sidebarContent()}</aside>
 
       <main className="main">
         <header className="header">
@@ -463,10 +394,10 @@ function App() {
             <input
               value={seedInput}
               onChange={(e) => setSeedInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleInitialExplore()}
+              onKeyDown={(e) => e.key === 'Enter' && handleExplore()}
               placeholder={t(lang, 'seed-placeholder')}
             />
-            <button onClick={handleInitialExplore} disabled={loading || !seedInput.trim()}>
+            <button onClick={handleExplore} disabled={loading || (!seedInput.trim() && centerWords.length === 0)}>
               {t(lang, 'explore')}
             </button>
           </div>
@@ -476,9 +407,7 @@ function App() {
           <nav className="breadcrumb">
             {history.map((entry, i) => (
               <span key={i}>
-                <button className="link" onClick={() => handleBack(i)}>
-                  {entry.label}
-                </button>
+                <button className="link" onClick={() => handleBack(i)}>{entry.label}</button>
                 {i < history.length - 1 && <span className="sep"> → </span>}
               </span>
             ))}
@@ -497,15 +426,9 @@ function App() {
 
         <div className="center-tools">
           <div className="manual-add">
-            <input
-              value={manualInput}
-              onChange={(e) => setManualInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleManualAdd()}
-              placeholder={t(lang, 'manual-placeholder')}
-            />
+            <input value={manualInput} onChange={(e) => setManualInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleManualAdd()} placeholder={t(lang, 'manual-placeholder')} />
             <button onClick={handleManualAdd} disabled={!manualInput.trim()}>{t(lang, 'add')}</button>
           </div>
-
           {allSeedWords().length > 0 && (
             <button className="generate-btn" onClick={handleGenerate} disabled={articleLoading}>
               {articleLoading ? t(lang, 'generating') : t(lang, 'generate')}
@@ -520,31 +443,14 @@ function App() {
           <>
             <section className="word-grid">
               {currentWords.map((word) => (
-                <button
-                  key={word}
-                  className={`word-card ${selectedWords.has(word) ? 'selected' : ''}`}
-                  onClick={() => toggleWord(word)}
-                  onMouseEnter={() => startHoverTimer(word)}
-                  onMouseLeave={() => clearHoverTimer(word)}
-                >
+                <button key={word} className="word-card" onClick={() => handleWordClick(word)}>
                   {word}
                 </button>
               ))}
             </section>
 
             <div className="actions">
-              <span className="hint">
-                {selectedWords.size === 0
-                  ? `${currentWords.length} ${t(lang, 'selected-hint')} — ${t(lang, 'click-hint')}`
-                  : `${selectedWords.size} ${t(lang, 'selected-hint')}`}
-              </span>
-              {autoSelect && <div className="hover-hint">{t(lang, 'hover-tip')}</div>}
-              <button
-                className="explore-btn"
-                onClick={handleContinueExplore}
-              >
-                {selectedWords.size === 0 ? t(lang, 'explore-selected') : t(lang, 'explore-selected')}
-              </button>
+              <span className="hint">{t(lang, 'explore-hint')}</span>
             </div>
           </>
         )}
@@ -553,18 +459,8 @@ function App() {
           <section className="article-panel">
             <div className="article-header">
               <div className="article-tabs">
-                <button
-                  className={`tab ${articleMode === 'article' ? 'active' : ''}`}
-                  onClick={() => setArticleMode('article')}
-                >
-                  {t(lang, 'article')}
-                </button>
-                <button
-                  className={`tab ${articleMode === 'input' ? 'active' : ''}`}
-                  onClick={() => setArticleMode('input')}
-                >
-                  {t(lang, 'text-input')}
-                </button>
+                <button className={`tab ${articleMode === 'article' ? 'active' : ''}`} onClick={() => setArticleMode('article')}>{t(lang, 'article')}</button>
+                <button className={`tab ${articleMode === 'input' ? 'active' : ''}`} onClick={() => setArticleMode('input')}>{t(lang, 'text-input')}</button>
               </div>
               <div className="article-header-actions">
                 <button className="header-btn" onClick={handleContinueWriting} disabled={articleLoading}>
@@ -579,17 +475,8 @@ function App() {
               <div className="article-content" dangerouslySetInnerHTML={{ __html: marked.parse(article) }} />
             ) : (
               <div className="article-input-area">
-                <textarea
-                  value={textInput}
-                  onChange={(e) => setTextInput(e.target.value)}
-                  placeholder={t(lang, 'extract-placeholder')}
-                  rows={8}
-                />
-                <button
-                  className="extract-btn"
-                  onClick={handleExtract}
-                  disabled={extracting || !textInput.trim()}
-                >
+                <textarea value={textInput} onChange={(e) => setTextInput(e.target.value)} placeholder={t(lang, 'extract-placeholder')} rows={8} />
+                <button className="extract-btn" onClick={handleExtract} disabled={extracting || !textInput.trim()}>
                   {extracting ? t(lang, 'extracting') : t(lang, 'extract')}
                 </button>
               </div>
