@@ -203,7 +203,8 @@ function App() {
 
   function saveCollection() {
     if (centerWords.length === 0) return
-    setCollections([...collections, { id: Date.now().toString(), name: `${t(lang, 'collections')} ${collections.length + 1}`, words: [...centerWords], checked: false }])
+    const name = centerWords.slice(0, 2).join(' · ')
+    setCollections([...collections, { id: Date.now().toString(), name, words: [...centerWords], checked: false }])
     setCenterWords([])
   }
   function toggleCollection(id: string) { setCollections((prev) => prev.map((c) => c.id === id ? { ...c, checked: !c.checked } : c)) }
