@@ -236,9 +236,6 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 	wordList := strings.Join(req.Words, ", ")
 	n := len(req.Words)
 	targetWords := 80 + n*30
-	if targetWords > 500 {
-		targetWords = 500
-	}
 	system := "You are a skilled writer."
 	lengthInstr := fmt.Sprintf(" Write about %d words.", targetWords)
 	var userPrompt string
