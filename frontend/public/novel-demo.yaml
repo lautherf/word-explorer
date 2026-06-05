@@ -1,173 +1,112 @@
-- name: 人物
-  words:
-    - 林默
-    - 苏晚晴
-    - 陈警官
-    - 周志远
-    - 老张
+- namespace: 人物
   checked: true
-
 - name: 林默
-  words:
-    - 前刑警，现茶馆老板，三十岁出头，沉稳内敛，擅长心理侧写
-  checked: true
-
 - name: 苏晚晴
-  words:
-    - 死者之女，二十四岁，报社实习记者，外表柔弱但心思缜密
-  checked: true
-
 - name: 陈警官
-  words:
-    - 现任刑侦队长，四十五岁，林默旧日同事，正直但受制于体制
-  checked: true
-
 - name: 周志远
-  words:
-    - 富商，四十八岁，表面慈善家，与雨夜谋杀案有隐秘关联
-  checked: true
-
 - name: 老张
-  words:
-    - 临江公寓保安，六十岁，雨夜当值，目击关键线索
+- namespace: 林默
   checked: true
-
-- name: 地点
-  words:
-    - 临江公寓
-    - 旧城区茶馆
-    - 警局审讯室
-    - 城西殡仪馆
-    - 青溪路
+- name: 前刑警，现茶馆老板，三十岁出头，沉稳内敛，擅长心理侧写
+- namespace: 苏晚晴
   checked: true
-
+- name: 死者之女，二十四岁，报社实习记者，外表柔弱但心思缜密
+- namespace: 陈警官
+  checked: true
+- name: 现任刑侦队长，四十五岁，林默旧日同事，正直但受制于体制
+- namespace: 周志远
+  checked: true
+- name: 富商，四十八岁，表面慈善家，与雨夜谋杀案有隐秘关联
+- namespace: 老张
+  checked: true
+- name: 临江公寓保安，六十岁，雨夜当值，目击关键线索
+- namespace: 地点
+  checked: true
 - name: 临江公寓
-  words:
-    - 雨夜谋杀案第一现场，顶层复式，至今空置，小区监控曾"故障"
-  checked: true
-
 - name: 旧城区茶馆
-  words:
-    - 林默经营的茶馆，二层临街，是他观察城市与接案的中转站
-  checked: true
-
 - name: 警局审讯室
-  words:
-    - 老式装修，单面镜，暖气片会发出规律的滴水声
-  checked: true
-
 - name: 城西殡仪馆
-  words:
-    - 当年尸检在此进行，关键法医报告被人为修改
-  checked: true
-
 - name: 青溪路
-  words:
-    - 雨夜当晚，凶手弃车逃逸的路线，无直接监控，但有一处自动照相机
+- namespace: 临江公寓
   checked: true
-
-- name: 事件
-  words:
-    - 雨夜谋杀
-    - 匿名举报信
-    - 茶馆对峙
-    - 证据失火
-    - 照相馆底片
+- name: 雨夜谋杀案第一现场，顶层复式，至今空置，小区监控曾"故障"
+- namespace: 旧城区茶馆
   checked: true
-
+- name: 林默经营的茶馆，二层临街，是他观察城市与接案的中转站
+- namespace: 警局审讯室
+  checked: true
+- name: 老式装修，单面镜，暖气片会发出规律的滴水声
+- namespace: 城西殡仪馆
+  checked: true
+- name: 当年尸检在此进行，关键法医报告被人为修改
+- namespace: 青溪路
+  checked: true
+- name: 雨夜当晚，凶手弃车逃逸的路线，无直接监控，但有一处自动照相机
+- namespace: 事件
+  checked: true
 - name: 雨夜谋杀
-  words:
-    - 五年前，地产商赵鸿飞在临江公寓被杀，凶器为一把古董剪刀，此案至今未破
-  checked: true
-
 - name: 匿名举报信
-  words:
-    - 苏晚晴收到，信纸是旧式红格信纸，提及"那天晚上不止一个人看到"
-  checked: true
-
 - name: 茶馆对峙
-  words:
-    - 林默约周志远在茶馆二楼见面，周志远带了两个私人保镖
-  checked: true
-
 - name: 证据失火
-  words:
-    - 警局物证室小规模火灾，恰好烧毁雨夜谋杀案部分物证
-  checked: true
-
 - name: 照相馆底片
-  words:
-    - 青溪路自动相机拍下一辆黑色轿车，车牌被故意遮挡，但车标与年检标清晰
+- namespace: 雨夜谋杀
   checked: true
-
-- name: 主线
-  words:
-    - 复仇
-    - 真相
+- name: 五年前，地产商赵鸿飞在临江公寓被杀，凶器为一把古董剪刀，此案至今未破
+- namespace: 匿名举报信
   checked: true
-
+- name: 苏晚晴收到，信纸是旧式红格信纸，提及"那天晚上不止一个人看到"
+- namespace: 茶馆对峙
+  checked: true
+- name: 林默约周志远在茶馆二楼见面，周志远带了两个私人保镖
+- namespace: 证据失火
+  checked: true
+- name: 警局物证室小规模火灾，恰好烧毁雨夜谋杀案部分物证
+- namespace: 照相馆底片
+  checked: true
+- name: 青溪路自动相机拍下一辆黑色轿车，车牌被故意遮挡，但车标与年检标清晰
+- namespace: 主线
+  checked: true
 - name: 复仇
-  words:
-    - 苏晚晴不只是追查真相，她怀疑母亲当年的意外死亡也与此案有关
-  checked: true
-
 - name: 真相
-  words:
-    - 雨夜谋杀案背后涉及土地审批与黑箱操作，凶手不止一人
+- namespace: 复仇
   checked: true
-
-- name: 支线线索
-  words:
-    - 骨灰盒夹层
-    - 茶馆账本
-    - 出租车票据
-    - 被删除的监控
+- name: 苏晚晴不只是追查真相，她怀疑母亲当年的意外死亡也与此案有关
+- namespace: 真相
   checked: true
-
+- name: 雨夜谋杀案背后涉及土地审批与黑箱操作，凶手不止一人
+- namespace: 支线线索
+  checked: true
 - name: 骨灰盒夹层
-  words:
-    - 苏晚晴发现母亲骨灰盒底部有一枚不属于家里的纽扣
-  checked: true
-
 - name: 茶馆账本
-  words:
-    - 林默记录客人谈话的习惯，其中一页被撕掉，对应雨夜后的第三天
-  checked: true
-
 - name: 出租车票据
-  words:
-    - 匿名信内夹着一张五年前的出租车小票，起讫地点均为临江公寓
-  checked: true
-
 - name: 被删除的监控
-  words:
-    - 临江公寓物业服务器曾被人物理入侵，但残留了0.3秒的雨伞画面
+- namespace: 骨灰盒夹层
   checked: true
-
-- name: 关键物证
-  words:
-    - 古董剪刀
-    - 纽扣
-    - 雨伞
-    - 年检标
+- name: 苏晚晴发现母亲骨灰盒底部有一枚不属于家里的纽扣
+- namespace: 茶馆账本
   checked: true
-
+- name: 林默记录客人谈话的习惯，其中一页被撕掉，对应雨夜后的第三天
+- namespace: 出租车票据
+  checked: true
+- name: 匿名信内夹着一张五年前的出租车小票，起讫地点均为临江公寓
+- namespace: 被删除的监控
+  checked: true
+- name: 临江公寓物业服务器曾被人物理入侵，但残留了0.3秒的雨伞画面
+- namespace: 关键物证
+  checked: true
 - name: 古董剪刀
-  words:
-    - 凶器，经查为清末女书裁缝铺所有，全市仅三把，一把在周志远收藏室
-  checked: true
-
 - name: 纽扣
-  words:
-    - 骨灰盒内纽扣，定制款，来自英国某男装品牌，当年全市只卖过十二枚
-  checked: true
-
 - name: 雨伞
-  words:
-    - 监控残帧中的雨伞，伞骨处有反光点，疑似为金属或徽章
-  checked: true
-
 - name: 年检标
-  words:
-    - 青溪路照片中黑色轿车的年检标编号，指向一家已注销的皮包公司
+- namespace: 古董剪刀
   checked: true
+- name: 凶器，经查为清末女书裁缝铺所有，全市仅三把，一把在周志远收藏室
+- namespace: 纽扣
+  checked: true
+- name: 骨灰盒内纽扣，定制款，来自英国某男装品牌，当年全市只卖过十二枚
+- namespace: 雨伞
+  checked: true
+- name: 监控残帧中的雨伞，伞骨处有反光点，疑似为金属或徽章
+- namespace: 年检标
+  checked: true
+- name: 青溪路照片中黑色轿车的年检标编号，指向一家已注销的皮包公司
