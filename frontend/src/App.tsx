@@ -123,6 +123,7 @@ function App() {
       if (next.has(word)) next.delete(word); else next.add(word)
       return next
     })
+    setCenterWords((prev) => prev.includes(word) ? prev : [...prev, word])
   }
 
   function removeCenterWord(word: string) {
