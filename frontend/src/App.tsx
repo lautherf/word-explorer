@@ -279,22 +279,15 @@ function App() {
       const text = await res.text()
       const data = yaml.load(text) as any[]
       if (Array.isArray(data)) {
-        const groups = new Map<string, { words: string[]; checked: boolean }>()
-        for (const item of data) {
-          const ns = item.namespace
-          if (ns) {
-            const words = item.name
-            groups.set(ns, { words: Array.isArray(words) ? words : [], checked: !!item.checked })
-          } else if (item.name && Array.isArray(item.words)) {
-            groups.set(item.name, { words: item.words, checked: !!item.checked })
-          }
-        }
-        setCollections(Array.from(groups.entries()).map(([name, g], i) => ({
-          id: Date.now().toString() + i,
-          name,
-          words: g.words,
-          checked: g.checked,
-        })))
+        setCollections(data
+          .filter((item: any) => item.namespace)
+          .map((item: any, i: number) => ({
+            id: Date.now().toString() + i,
+            name: item.namespace,
+            words: Array.isArray(item.name) ? item.name : [],
+            checked: !!item.checked,
+          }))
+        )
       }
     } catch {}
   }
@@ -317,22 +310,15 @@ function App() {
       try {
         const data = yaml.load(reader.result as string) as any[]
         if (Array.isArray(data)) {
-          const groups = new Map<string, { words: string[]; checked: boolean }>()
-          for (const item of data) {
-            const ns = item.namespace
-            if (ns) {
-              const words = item.name
-              groups.set(ns, { words: Array.isArray(words) ? words : [], checked: !!item.checked })
-            } else if (item.name && Array.isArray(item.words)) {
-              groups.set(item.name, { words: item.words, checked: !!item.checked })
-            }
-          }
-          setCollections(Array.from(groups.entries()).map(([name, g], i) => ({
-            id: Date.now().toString() + i,
-            name,
-            words: g.words,
-            checked: g.checked,
-          })))
+          const collections = data
+            .filter((item: any) => item.namespace)
+            .map((item: any, i: number) => ({
+              id: Date.now().toString() + i,
+              name: item.namespace,
+              words: Array.isArray(item.name) ? item.name : [],
+              checked: !!item.checked,
+            }))
+          setCollections(collections)
         }
       } catch {}
     }
