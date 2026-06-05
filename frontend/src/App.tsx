@@ -279,19 +279,36 @@ function App() {
       const text = await res.text()
       const data = yaml.load(text) as any[]
       if (Array.isArray(data)) {
-        setCollections(data.map((item: any, i: number) => ({
+        const groups = new Map<string, { words: string[]; checked: boolean }>()
+        for (const item of data) {
+          if (item.namespace && item.name) {
+            const ns = item.namespace
+            if (!groups.has(ns)) groups.set(ns, { words: [], checked: !!item.checked })
+            const g = groups.get(ns)!
+            g.words.push(item.name)
+            if (item.checked) g.checked = true
+          } else if (item.name && Array.isArray(item.words)) {
+            groups.set(item.name, { words: item.words, checked: !!item.checked })
+          }
+        }
+        setCollections(Array.from(groups.entries()).map(([name, g], i) => ({
           id: Date.now().toString() + i,
-          name: item.name || `Collection ${i + 1}`,
-          words: Array.isArray(item.words) ? item.words : [],
-          checked: !!item.checked,
+          name,
+          words: g.words,
+          checked: g.checked,
         })))
       }
     } catch {}
   }
 
   function exportCollections() {
-    const data = collections.map(({ id, name, words, checked }) => ({ name, words, checked }))
-    const yamlStr = yaml.dump(data, { indent: 2 })
+    const flat: { namespace: string; name: string; checked: boolean }[] = []
+    for (const c of collections) {
+      for (const w of c.words) {
+        flat.push({ namespace: c.name, name: w, checked: c.checked })
+      }
+    }
+    const yamlStr = yaml.dump(flat, { indent: 2 })
     const blob = new Blob([yamlStr], { type: 'text/yaml' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -307,11 +324,23 @@ function App() {
       try {
         const data = yaml.load(reader.result as string) as any[]
         if (Array.isArray(data)) {
-          setCollections(data.map((item: any, i: number) => ({
+          const groups = new Map<string, { words: string[]; checked: boolean }>()
+          for (const item of data) {
+            if (item.namespace && item.name) {
+              const ns = item.namespace
+              if (!groups.has(ns)) groups.set(ns, { words: [], checked: !!item.checked })
+              const g = groups.get(ns)!
+              g.words.push(item.name)
+              if (item.checked) g.checked = true
+            } else if (item.name && Array.isArray(item.words)) {
+              groups.set(item.name, { words: item.words, checked: !!item.checked })
+            }
+          }
+          setCollections(Array.from(groups.entries()).map(([name, g], i) => ({
             id: Date.now().toString() + i,
-            name: item.name || `Collection ${i + 1}`,
-            words: Array.isArray(item.words) ? item.words : [],
-            checked: !!item.checked,
+            name,
+            words: g.words,
+            checked: g.checked,
           })))
         }
       } catch {}
