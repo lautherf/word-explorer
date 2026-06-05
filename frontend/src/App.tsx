@@ -134,8 +134,10 @@ function App() {
   }
 
   function handleExplore() {
-    if (centerWords.length === 0) return
-    const seeds = selectedWords.size > 0 ? Array.from(selectedWords) : centerWords
+    if (centerWords.length === 0 && activeCollectionWords().length === 0) return
+    const seeds = selectedWords.size > 0
+      ? [...new Set([...Array.from(selectedWords), ...activeCollectionWords()])]
+      : [...new Set([...centerWords, ...activeCollectionWords()])]
     const deduped = [...new Set([...centerWords, ...seeds])]
     setHistory([...history, { words: centerWords, label: centerWords.join(', ') }])
     setCenterWords(deduped)
@@ -426,7 +428,7 @@ function App() {
             <input value={manualInput} onChange={(e) => setManualInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleManualAdd()} placeholder={t(lang, 'manual-placeholder')} />
             <button onClick={handleManualAdd} disabled={!manualInput.trim()}>{t(lang, 'add')}</button>
           </div>
-          <button className={`explore-btn ${selectedWords.size > 0 ? 'has-selection' : ''}`} onClick={handleExplore} disabled={loading || centerWords.length === 0}>
+          <button className={`explore-btn ${selectedWords.size > 0 ? 'has-selection' : ''}`} onClick={handleExplore} disabled={loading || (centerWords.length === 0 && activeCollectionWords().length === 0)}>
             {t(lang, 'explore')}{selectedWords.size > 0 ? ` (${selectedWords.size})` : ''}
           </button>
           <button className="generate-btn" onClick={handleGenerate} disabled={articleLoading || allSeedWords().length === 0}>
