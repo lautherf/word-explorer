@@ -122,6 +122,8 @@ function App() {
   }
 
   async function explore(words: string[]) {
+    setExplainWord(null)
+    setExplanation('')
     setLoading(true)
     setError('')
     try {
@@ -383,9 +385,6 @@ function App() {
   function cancelExplain() {
     if (explainTimer.current) { clearTimeout(explainTimer.current); explainTimer.current = null }
     if (abortRef.current) { abortRef.current.abort(); abortRef.current = null }
-    setExplainWord(null)
-    setExplanation('')
-    setExplaining(false)
   }
 
   function copyArticle() {
