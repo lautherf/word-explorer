@@ -232,6 +232,22 @@
 .extract-btn:active:not(:disabled) { transform: translateY(0) }
 .extract-btn:disabled { opacity: 0.35; cursor: not-allowed }
 
+/* ── Polish Panel ── */
+.polish-panel { padding: 14px 18px; background: #12121a; border-bottom: 1px solid #1f2937 }
+.polish-categories { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px }
+.polish-cat {
+  padding: 5px 12px; font-size: 12px; font-weight: 600; border: 1px solid #1f2937;
+  background: #1a1a24; color: #6b7280; border-radius: 6px; cursor: pointer; transition: all 0.15s;
+}
+.polish-cat:hover { border-color: #374151; color: #e5e7eb }
+.polish-cat.active { background: linear-gradient(135deg, #818cf8, #a78bfa); color: #000; border-color: transparent }
+.polish-input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #1f2937; border-radius: 8px; background: #1a1a24; color: #e5e7eb; font-size: 13px; font-family: inherit; resize: vertical; outline: none; transition: all 0.2s }
+.polish-input:focus { border-color: #818cf8 }
+.polish-actions { display: flex; gap: 8px; margin-top: 10px }
+.polish-apply-btn { padding: 8px 24px; background: linear-gradient(135deg, #f59e0b, #f97316); color: #000; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s }
+.polish-apply-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(245,158,11,0.3) }
+.polish-apply-btn:disabled { opacity: 0.35; cursor: not-allowed }
+
 /* ── Mobile Menu Button ── */
 .mobile-menu-btn {
   display: none; background: none; border: 1px solid #1f2937; color: #9ca3af;

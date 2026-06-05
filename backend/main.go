@@ -42,6 +42,12 @@ type GenerateResponse struct {
 	Article string `json:"article"`
 }
 
+type PolishRequest struct {
+	Article string `json:"article"`
+	Prompt  string `json:"prompt"`
+	Lang    string `json:"lang"`
+}
+
 func callLLM(systemPrompt, userPrompt string) (string, error) {
 	body := map[string]interface{}{
 		"model": llmModel,
@@ -277,6 +283,41 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(GenerateResponse{Article: content})
 }
 
+func handlePolish(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var req PolishRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid JSON"}`, http.StatusBadRequest)
+		return
+	}
+	if req.Article == "" {
+		http.Error(w, `{"error":"article required"}`, http.StatusBadRequest)
+		return
+	}
+
+	langName := map[string]string{"zh": "Chinese", "en": "English"}[req.Lang]
+	if langName == "" {
+		langName = "English"
+	}
+
+	system := "You are a professional editor and writing consultant."
+	prompt := req.Prompt
+	if prompt == "" {
+		prompt = "Polish and improve the writing quality."
+	}
+	userPrompt := fmt.Sprintf("Rewrite the following article according to these instructions: %s\n\nMaintain the original meaning and key information. Output only the polished article, no commentary.\n\nLanguage: %s\n\nArticle:\n%s", prompt, langName, req.Article)
+
+	content, err := callLLM(system, userPrompt)
+	if err != nil {
+		log.Printf("LLM polish failed: %v", err)
+		http.Error(w, `{"error":"polish failed"}`, http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(GenerateResponse{Article: content})
+}
+
 func gzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
@@ -327,6 +368,7 @@ func main() {
 	http.HandleFunc("/api/explore", handleExplore)
 	http.HandleFunc("/api/generate", handleGenerate)
 	http.HandleFunc("/api/extract", handleExtract)
+	http.HandleFunc("/api/polish", handlePolish)
 
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", gzipMiddleware(fs))

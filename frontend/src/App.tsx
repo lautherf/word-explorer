@@ -20,6 +20,11 @@ const zh: Record<string, string> = {
   'export': '导出集合', 'import': '导入覆盖', 'load-demo': '载入 Demo',
   'tab-background': '背景设定',
   'continue-length': '续写字数',
+  'polish': '润色', 'polishing': '润色中...', 'polish-custom': '自定义润色说明',
+  'polish-cat-0': '悬疑小说', 'polish-cat-1': '科普文章', 'polish-cat-2': '散文随笔',
+  'polish-cat-3': '新闻报导', 'polish-cat-4': '商业分析', 'polish-cat-5': '学术论文',
+  'polish-cat-6': '技术文档', 'polish-cat-7': '诗歌化',
+  'polish-apply': '应用润色',
   'click-hint': '点击词卡选中，多个选中后点"探索"',
 }
 
@@ -38,6 +43,11 @@ const en: Record<string, string> = {
   'export': 'Export', 'import': 'Import & Overwrite', 'load-demo': 'Load Demo',
   'tab-background': 'Background',
   'continue-length': 'Words to write',
+  'polish': 'Polish', 'polishing': 'Polishing...', 'polish-custom': 'Custom polish instruction',
+  'polish-cat-0': 'Mystery Novel', 'polish-cat-1': 'Science Writing', 'polish-cat-2': 'Essay',
+  'polish-cat-3': 'News Report', 'polish-cat-4': 'Business Analysis', 'polish-cat-5': 'Academic Paper',
+  'polish-cat-6': 'Technical Writing', 'polish-cat-7': 'Poetic',
+  'polish-apply': 'Apply Polish',
   'click-hint': 'Click words to select, then click "Explore"',
 }
 
@@ -82,6 +92,10 @@ function App() {
   const [article, setArticle] = useState('')
   const [articleLoading, setArticleLoading] = useState(false)
   const [continueLength, setContinueLength] = useState('')
+  const [polishPanelOpen, setPolishPanelOpen] = useState(false)
+  const [polishCategory, setPolishCategory] = useState(0)
+  const [polishCustom, setPolishCustom] = useState('')
+  const [polishing, setPolishing] = useState(false)
   const [textInput, setTextInput] = useState('')
   const [extracting, setExtracting] = useState(false)
   const [backgroundText, setBackgroundText] = useState(() => localStorage.getItem('word-explorer-bg') || '')
@@ -290,6 +304,35 @@ function App() {
     e.target.value = ''
   }
 
+  const polishPresets: string[][] = [
+    ['polish-cat-0', '增强悬疑氛围，强化环境与心理细节描写，对话暗藏潜台词，节奏张弛有度'],
+    ['polish-cat-1', '语言严谨准确，概念解释通俗易懂，逻辑链条完整，适当使用类比'],
+    ['polish-cat-2', '语言优美自然，富有画面感和意境，情感真挚，节奏舒缓'],
+    ['polish-cat-3', '客观中立，事实准确，导语精炼，信息密度高，倒金字塔结构'],
+    ['polish-cat-4', '论点明确，论据充分，逻辑清晰，数据可视化描述，结论有洞察'],
+    ['polish-cat-5', '格式规范，术语准确，论证严谨，引证充分，摘要精炼'],
+    ['polish-cat-6', '步骤清晰，术语一致，示例准确，图文对应，避免歧义'],
+    ['polish-cat-7', '富有节奏感和韵律，意象鲜明，语言凝练，留白恰当'],
+  ]
+
+  async function handlePolish() {
+    if (!article) return
+    setPolishing(true)
+    const prompt = polishCustom.trim() || polishPresets[polishCategory][1]
+    try {
+      const res = await fetch('/api/polish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ article, prompt, lang }),
+      })
+      if (!res.ok) throw new Error('API error')
+      const data = await res.json()
+      setArticle(data.article)
+      setPolishPanelOpen(false)
+    } catch { setError(t(lang, 'error-gen'))
+    } finally { setPolishing(false) }
+  }
+
   function copyArticle() {
     const ta = document.createElement('textarea')
     ta.value = article; ta.style.position = 'fixed'; ta.style.opacity = '0'
@@ -427,9 +470,27 @@ function App() {
             <div className="article-header">
               <span className="article-header-title">{t(lang, 'tab-article')}</span>
               <div className="article-header-actions">
+                <button className="header-btn" onClick={() => setPolishPanelOpen(true)}>{t(lang, 'polish')}</button>
                 <button className="header-btn" onClick={copyArticle}>{t(lang, 'copy')}</button>
               </div>
             </div>
+            {polishPanelOpen && (
+              <div className="polish-panel">
+                <div className="polish-categories">
+                  {polishPresets.map((p, i) => (
+                    <button key={i} className={`polish-cat ${polishCategory === i ? 'active' : ''}`} onClick={() => setPolishCategory(i)}>
+                      {t(lang, `polish-cat-${i}` as any)}
+                    </button>
+                  ))}
+                </div>
+                <textarea className="polish-input" value={polishCustom} onChange={(e) => setPolishCustom(e.target.value)} placeholder={t(lang, 'polish-custom')} rows={3} />
+                <div className="polish-actions">
+                  <button className="polish-apply-btn" onClick={handlePolish} disabled={polishing}>
+                    {polishing ? t(lang, 'polishing') : t(lang, 'polish-apply')}
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="article-content" dangerouslySetInnerHTML={{ __html: marked.parse(article) }} />
             <div className="article-footer">
               <label className="continue-length-label">
