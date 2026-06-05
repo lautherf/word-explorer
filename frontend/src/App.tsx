@@ -103,6 +103,13 @@ function App() {
 
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
 
+  const [explanation, setExplanation] = useState('')
+  const [explaining, setExplaining] = useState(false)
+  const [explainWord, setExplainWord] = useState<string | null>(null)
+  const [explainPos, setExplainPos] = useState({ x: 0, y: 0 })
+  const explainTimer = useRef<number | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
+
   const [expandedCol, setExpandedCol] = useState<string | null>(null)
   const [colWordInput, setColWordInput] = useState('')
   const [activeTab, setActiveTab] = useState<Tab>('explore')
@@ -337,6 +344,50 @@ function App() {
     } finally { setPolishing(false) }
   }
 
+  async function handleExplain(word: string, e: React.MouseEvent) {
+    if (abortRef.current) abortRef.current.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    const context = Array.from(selectedWords).length > 0
+      ? Array.from(selectedWords)
+      : currentWords.filter((w) => w !== word)
+
+    setExplainWord(word)
+    setExplainPos({ x: e.clientX, y: e.clientY - 10 })
+    setExplanation('')
+    setExplaining(true)
+
+    try {
+      const res = await fetch('/api/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word, context, lang }),
+        signal: controller.signal,
+      })
+      if (!res.ok) throw new Error('API error')
+      const data = await res.json()
+      setExplanation(data.explanation)
+    } catch {
+      if (!controller.signal.aborted) setExplanation('')
+    } finally {
+      setExplaining(false)
+    }
+  }
+
+  function startExplain(word: string, e: React.MouseEvent) {
+    if (explainTimer.current) clearTimeout(explainTimer.current)
+    explainTimer.current = window.setTimeout(() => handleExplain(word, e), 300)
+  }
+
+  function cancelExplain() {
+    if (explainTimer.current) { clearTimeout(explainTimer.current); explainTimer.current = null }
+    if (abortRef.current) { abortRef.current.abort(); abortRef.current = null }
+    setExplainWord(null)
+    setExplanation('')
+    setExplaining(false)
+  }
+
   function copyArticle() {
     const ta = document.createElement('textarea')
     ta.value = article; ta.style.position = 'fixed'; ta.style.opacity = '0'
@@ -455,7 +506,7 @@ function App() {
             <>
               <section className="word-grid">
                 {currentWords.map((word) => (
-                  <button key={word} className={`word-card ${selectedWords.has(word) ? 'selected' : ''}`} onClick={() => toggleWord(word)}>
+                  <button key={word} className={`word-card ${selectedWords.has(word) ? 'selected' : ''}`} onClick={() => toggleWord(word)} onMouseEnter={(e) => startExplain(word, e)} onMouseLeave={cancelExplain}>
                     {word}
                   </button>
                 ))}
@@ -467,6 +518,12 @@ function App() {
           ) : (
             <div className="empty-state">{t(lang, 'explore')}</div>
           )
+        )}
+
+        {explainWord && (explaining || explanation) && (
+          <div className="explain-tooltip" style={{ left: explainPos.x, top: explainPos.y }}>
+            {explaining ? <span className="explain-loading">...</span> : explanation}
+          </div>
         )}
 
         {!loading && activeTab === 'article' && article && (

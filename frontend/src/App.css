@@ -232,6 +232,17 @@
 .extract-btn:active:not(:disabled) { transform: translateY(0) }
 .extract-btn:disabled { opacity: 0.35; cursor: not-allowed }
 
+/* ── Explain Tooltip ── */
+.explain-tooltip {
+  position: fixed; z-index: 999; max-width: 320px;
+  padding: 10px 14px; background: #1e1d30; border: 1px solid #374151;
+  border-radius: 8px; font-size: 13px; line-height: 1.5; color: #d1d5db;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3); pointer-events: none;
+  transform: translateY(-100%); animation: tooltip-in 0.15s ease-out;
+}
+@keyframes tooltip-in { from { opacity: 0; transform: translateY(-90%) } to { opacity: 1; transform: translateY(-100%) } }
+.explain-loading { color: #818cf8; font-size: 13px }
+
 /* ── Polish Panel ── */
 .polish-panel { padding: 14px 18px; background: #12121a; border-bottom: 1px solid #1f2937 }
 .polish-categories { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px }

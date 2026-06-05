@@ -48,6 +48,16 @@ type PolishRequest struct {
 	Lang    string `json:"lang"`
 }
 
+type ExplainRequest struct {
+	Word    string   `json:"word"`
+	Context []string `json:"context"`
+	Lang    string   `json:"lang"`
+}
+
+type ExplainResponse struct {
+	Explanation string `json:"explanation"`
+}
+
 func callLLM(systemPrompt, userPrompt string) (string, error) {
 	body := map[string]interface{}{
 		"model": llmModel,
@@ -318,6 +328,41 @@ func handlePolish(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(GenerateResponse{Article: content})
 }
 
+func handleExplain(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var req ExplainRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid JSON"}`, http.StatusBadRequest)
+		return
+	}
+	if req.Word == "" {
+		http.Error(w, `{"error":"word required"}`, http.StatusBadRequest)
+		return
+	}
+
+	langName := map[string]string{"zh": "Chinese", "en": "English"}[req.Lang]
+	if langName == "" {
+		langName = "English"
+	}
+
+	system := "You are a semantic analysis assistant."
+	contextStr := ""
+	if len(req.Context) > 0 {
+		contextStr = " in the context of these related concepts: [" + strings.Join(req.Context, ", ") + "]"
+	}
+	userPrompt := fmt.Sprintf("Explain the meaning and significance of the word \"%s\"%s. Keep the explanation concise (2-3 sentences). Respond in %s.", req.Word, contextStr, langName)
+
+	content, err := callLLM(system, userPrompt)
+	if err != nil {
+		log.Printf("LLM explain failed: %v", err)
+		http.Error(w, `{"error":"explain failed"}`, http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(ExplainResponse{Explanation: content})
+}
+
 func gzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
@@ -369,6 +414,7 @@ func main() {
 	http.HandleFunc("/api/generate", handleGenerate)
 	http.HandleFunc("/api/extract", handleExtract)
 	http.HandleFunc("/api/polish", handlePolish)
+	http.HandleFunc("/api/explain", handleExplain)
 
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", gzipMiddleware(fs))
