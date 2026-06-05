@@ -19,6 +19,7 @@ const zh: Record<string, string> = {
   'settings': '设置', 'add-to-col': '添加到集合',
   'export': '导出集合', 'import': '导入覆盖',
   'tab-background': '背景设定',
+  'continue-length': '续写字数',
   'click-hint': '点击词卡选中，多个选中后点"探索"',
 }
 
@@ -36,6 +37,7 @@ const en: Record<string, string> = {
   'settings': 'Settings', 'add-to-col': 'Add to collection',
   'export': 'Export', 'import': 'Import & Overwrite',
   'tab-background': 'Background',
+  'continue-length': 'Words to write',
   'click-hint': 'Click words to select, then click "Explore"',
 }
 
@@ -79,6 +81,7 @@ function App() {
 
   const [article, setArticle] = useState('')
   const [articleLoading, setArticleLoading] = useState(false)
+  const [continueLength, setContinueLength] = useState('')
   const [textInput, setTextInput] = useState('')
   const [extracting, setExtracting] = useState(false)
   const [backgroundText, setBackgroundText] = useState(() => localStorage.getItem('word-explorer-bg') || '')
@@ -184,11 +187,16 @@ function App() {
     const seeds = allSeedWords()
     if (seeds.length === 0 || !article) return
     setArticleLoading(true)
+    const targetLen = parseInt(continueLength, 10)
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ words: seeds, lang, existing: article, namespaces: buildNamespaces(), background: backgroundText }),
+        body: JSON.stringify({
+          words: seeds, lang, existing: article,
+          namespaces: buildNamespaces(), background: backgroundText,
+          target_length: targetLen > 0 ? targetLen : undefined,
+        }),
       })
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
@@ -396,13 +404,24 @@ function App() {
             <div className="article-header">
               <span className="article-header-title">{t(lang, 'tab-article')}</span>
               <div className="article-header-actions">
-                <button className="header-btn" onClick={handleContinueWriting} disabled={articleLoading}>
-                  {articleLoading ? t(lang, 'continuing') : t(lang, 'continue')}
-                </button>
                 <button className="header-btn" onClick={copyArticle}>{t(lang, 'copy')}</button>
               </div>
             </div>
             <div className="article-content" dangerouslySetInnerHTML={{ __html: marked.parse(article) }} />
+            <div className="article-footer">
+              <label className="continue-length-label">
+                <span>{t(lang, 'continue-length')}</span>
+                <input
+                  type="number" min="1" max="9999"
+                  value={continueLength}
+                  onChange={(e) => setContinueLength(e.target.value)}
+                  placeholder={lang === 'zh' ? '默认' : 'auto'}
+                />
+              </label>
+              <button className="continue-btn" onClick={handleContinueWriting} disabled={articleLoading}>
+                {articleLoading ? t(lang, 'continuing') : t(lang, 'continue')}
+              </button>
+            </div>
           </section>
         )}
 

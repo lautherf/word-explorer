@@ -193,6 +193,33 @@
 .article-content a { color: #818cf8; text-decoration: none }
 .article-content a:hover { text-decoration: underline }
 
+.article-footer {
+  display: flex; align-items: center; gap: 12px; padding: 12px 18px;
+  background: #12121a; border-top: 1px solid #1f2937;
+}
+
+.continue-length-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: #9ca3af; white-space: nowrap;
+}
+
+.continue-length-label input {
+  width: 80px; padding: 6px 10px; border: 1px solid #1f2937;
+  border-radius: 6px; font-size: 13px; background: #1a1a24; color: #e5e7eb;
+  outline: none; font-family: inherit;
+}
+.continue-length-label input:focus { border-color: #818cf8 }
+
+.continue-btn {
+  margin-left: auto; padding: 8px 24px;
+  background: linear-gradient(135deg, #10b981, #059669); color: #000;
+  border: none; border-radius: 8px; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+}
+.continue-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(16,185,129,0.3) }
+.continue-btn:active:not(:disabled) { transform: translateY(0) }
+.continue-btn:disabled { opacity: 0.35; cursor: not-allowed }
+
 /* ── Extract Panel ── */
 .extract-panel { background: #1a1a24; border: 1px solid #1f2937; border-radius: 12px; padding: 18px; animation: slide-up 0.25s ease-out }
 .extract-panel textarea { width: 100%; box-sizing: border-box; padding: 14px; border: 1px solid #1f2937; border-radius: 10px; background: #12121a; color: #e5e7eb; font-size: 14px; font-family: inherit; resize: vertical; outline: none; transition: all 0.2s; line-height: 1.6 }

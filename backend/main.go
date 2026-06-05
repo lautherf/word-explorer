@@ -30,11 +30,12 @@ type ExploreResponse struct {
 }
 
 type GenerateRequest struct {
-	Words      []string            `json:"words"`
-	Lang       string              `json:"lang"`
-	Existing   string              `json:"existing"`
-	Namespaces map[string][]string `json:"namespaces"`
-	Background string              `json:"background"`
+	Words        []string            `json:"words"`
+	Lang         string              `json:"lang"`
+	Existing     string              `json:"existing"`
+	Namespaces   map[string][]string `json:"namespaces"`
+	Background   string              `json:"background"`
+	TargetLength int                 `json:"target_length"`
 }
 
 type GenerateResponse struct {
@@ -237,7 +238,10 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 	guidance := " Use the following concepts as high-level thematic guidance — the article should be related to them in spirit and direction, but you don't need to force every single one into the text."
 	wordList := strings.Join(req.Words, ", ")
 	n := len(req.Words)
-	targetWords := 80 + n*30
+	targetWords := req.TargetLength
+	if targetWords <= 0 {
+		targetWords = 80 + n*30
+	}
 	system := "You are a skilled writer."
 	lengthInstr := fmt.Sprintf(" Write about %d words.", targetWords)
 
