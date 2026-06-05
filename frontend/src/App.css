@@ -229,3 +229,69 @@
 .extract-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(139,92,246,0.3) }
 .extract-btn:active:not(:disabled) { transform: translateY(0) }
 .extract-btn:disabled { opacity: 0.35; cursor: not-allowed }
+
+/* ── Mobile Menu Button ── */
+.mobile-menu-btn {
+  display: none; background: none; border: 1px solid #1f2937; color: #9ca3af;
+  font-size: 18px; padding: 4px 10px; border-radius: 8px; cursor: pointer;
+  position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  transition: all 0.2s;
+}
+.mobile-menu-btn:hover { border-color: #818cf8; color: #818cf8 }
+
+.drawer-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5); z-index: 200;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(4px);
+}
+.drawer-overlay.open { opacity: 1; pointer-events: auto }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .mobile-menu-btn { display: flex; align-items: center; justify-content: center; }
+
+  .sidebar {
+    position: fixed; top: 0; left: 0; width: 280px; height: 100vh;
+    z-index: 300; transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 4px 0 32px rgba(0,0,0,0.3);
+  }
+  .sidebar.open { transform: translateX(0) }
+
+  .main {
+    max-width: 100%; padding: 20px 16px;
+  }
+
+  .header { position: relative; margin-bottom: 20px; padding-left: 40px }
+  .header h1 { font-size: 20px }
+
+  .center-zone { padding: 14px 16px; gap: 8px; min-height: auto }
+  .center-chip { font-size: 12px; padding: 5px 14px 5px 16px }
+
+  .center-tools { gap: 6px }
+  .manual-add input { width: 120px; font-size: 13px; padding: 8px 12px }
+  .manual-add button { font-size: 12px; padding: 8px 14px }
+  .explore-btn { font-size: 12px; padding: 8px 14px }
+  .generate-btn { font-size: 12px; padding: 8px 14px }
+
+  .main-tabs { gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none }
+  .main-tabs::-webkit-scrollbar { display: none }
+  .main-tab { font-size: 12px; padding: 7px 14px; white-space: nowrap }
+
+  .word-grid { gap: 6px }
+  .word-card { font-size: 13px; padding: 8px 16px }
+
+  .actions .hint { font-size: 12px }
+
+  .article-content { padding: 16px 18px; font-size: 14px }
+  .article-footer { flex-wrap: wrap; gap: 8px }
+  .continue-length-label { font-size: 12px }
+  .continue-length-label input { width: 60px }
+  .continue-btn { margin-left: 0; width: 100%; text-align: center }
+
+  .extract-panel { padding: 14px }
+  .extract-panel textarea { font-size: 13px; padding: 12px }
+
+  .breadcrumb { font-size: 12px }
+  .breadcrumb .link { font-size: 12px }
+}

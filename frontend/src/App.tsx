@@ -87,6 +87,8 @@ function App() {
   const [backgroundText, setBackgroundText] = useState(() => localStorage.getItem('word-explorer-bg') || '')
   useEffect(() => { localStorage.setItem('word-explorer-bg', backgroundText) }, [backgroundText])
 
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
+
   const [expandedCol, setExpandedCol] = useState<string | null>(null)
   const [colWordInput, setColWordInput] = useState('')
   const [activeTab, setActiveTab] = useState<Tab>('explore')
@@ -282,59 +284,16 @@ function App() {
 
   return (
     <div className="app-layout">
-      <aside className="sidebar">
-        <div className="sidebar-top">
-          <h2>{t(lang, 'collections')}</h2>
-          <div className="sidebar-top-actions">
-            <button className="settings-toggle" onClick={() => setShowSettings(!showSettings)} title={t(lang, 'settings')}>⚙</button>
-            <button className="lang-toggle" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>{lang === 'zh' ? 'EN' : '中'}</button>
-          </div>
-        </div>
-        {showSettings && (
-          <div className="settings-panel">
-            <label className="setting-row"><span>{t(lang, 'settings')}</span></label>
-          </div>
-        )}
-        {centerWords.length > 0 && <button className="save-col-btn" onClick={saveCollection}>{t(lang, 'save-center')}</button>}
-        <div className="sidebar-io">
-          <button className="io-btn" onClick={exportCollections} disabled={collections.length === 0}>{t(lang, 'export')}</button>
-          <label className="io-btn io-label">{t(lang, 'import')}<input type="file" accept=".yaml,.yml" onChange={importCollections} hidden /></label>
-        </div>
-        <div className="collection-list">
-          {collections.length === 0 && <p className="empty-hint">{t(lang, 'no-collections')}</p>}
-          {collections.map((c) => {
-            const isExpanded = expandedCol === c.id
-            return (
-              <div key={c.id}>
-                <div className={`collection-item ${c.checked ? 'active' : ''}`}>
-                  <label className="collect-label">
-                    <input type="checkbox" checked={c.checked} onChange={() => toggleCollection(c.id)} />
-                    <input className="collect-name" value={c.name} onChange={(e) => renameCollection(c.id, e.target.value)} onClick={(e) => e.stopPropagation()} />
-                  </label>
-                  <span className="collect-count">{c.words.length}</span>
-                  <button className="collect-expand" onClick={() => setExpandedCol(isExpanded ? null : c.id)}>{isExpanded ? '▾' : '▸'}</button>
-                  <button className="collect-del" onClick={() => deleteCollection(c.id)}>✕</button>
-                </div>
-                {isExpanded && (
-                  <div className="collection-words">
-                    {c.words.map((w) => (
-                      <div key={w} className="collection-word-row"><span>{w}</span><button onClick={() => removeCollectionWord(c.id, w)}>✕</button></div>
-                    ))}
-                    <div className="collection-word-add">
-                      <input value={colWordInput} onChange={(e) => setColWordInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addCollectionWord(c.id)} placeholder={t(lang, 'add-to-col')} />
-                      <button onClick={() => addCollectionWord(c.id)} disabled={!colWordInput.trim()}>+</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-        {hasActiveCollections && <p className="collect-hint">{t(lang, 'active-hint')}</p>}
+      <div className={`drawer-overlay ${mobileDrawerOpen ? 'open' : ''}`} onClick={() => setMobileDrawerOpen(false)} />
+      <aside className={`sidebar ${mobileDrawerOpen ? 'open' : ''}`}>
+        {sidebarContent()}
       </aside>
 
       <main className="main">
-        <header className="header"><h1>{t(lang, 'title')}</h1></header>
+        <header className="header">
+          <button className="mobile-menu-btn" onClick={() => setMobileDrawerOpen(true)}>☰</button>
+          <h1>{t(lang, 'title')}</h1>
+        </header>
 
         {history.length > 0 && (
           <nav className="breadcrumb">
