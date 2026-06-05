@@ -109,6 +109,7 @@ function App() {
   const [explainPos, setExplainPos] = useState({ x: 0, y: 0 })
   const explainTimer = useRef<number | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const explainCache = useRef<Map<string, string>>(new Map())
 
   const [expandedCol, setExpandedCol] = useState<string | null>(null)
   const [colWordInput, setColWordInput] = useState('')
@@ -124,6 +125,7 @@ function App() {
   async function explore(words: string[]) {
     setExplainWord(null)
     setExplanation('')
+    explainCache.current.clear()
     setLoading(true)
     setError('')
     try {
@@ -347,6 +349,16 @@ function App() {
   }
 
   async function handleExplain(word: string, e: React.MouseEvent) {
+    const cacheKey = word + '|' + Array.from(selectedWords).sort().join(',')
+    setExplainPos({ x: e.clientX, y: e.clientY - 10 })
+    setExplainWord(word)
+
+    if (explainCache.current.has(cacheKey)) {
+      setExplanation(explainCache.current.get(cacheKey)!)
+      setExplaining(false)
+      return
+    }
+
     if (abortRef.current) abortRef.current.abort()
     const controller = new AbortController()
     abortRef.current = controller
@@ -355,8 +367,6 @@ function App() {
       ? Array.from(selectedWords)
       : currentWords.filter((w) => w !== word)
 
-    setExplainWord(word)
-    setExplainPos({ x: e.clientX, y: e.clientY - 10 })
     setExplanation('')
     setExplaining(true)
 
@@ -369,6 +379,7 @@ function App() {
       })
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
+      explainCache.current.set(cacheKey, data.explanation)
       setExplanation(data.explanation)
     } catch {
       if (!controller.signal.aborted) setExplanation('')
@@ -385,6 +396,9 @@ function App() {
   function cancelExplain() {
     if (explainTimer.current) { clearTimeout(explainTimer.current); explainTimer.current = null }
     if (abortRef.current) { abortRef.current.abort(); abortRef.current = null }
+    setExplainWord(null)
+    setExplanation('')
+    setExplaining(false)
   }
 
   function copyArticle() {
