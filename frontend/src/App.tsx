@@ -110,7 +110,9 @@ function App() {
   function handleExplore() {
     if (centerWords.length === 0) return
     const seeds = selectedWords.size > 0 ? Array.from(selectedWords) : centerWords
+    const deduped = [...new Set([...centerWords, ...seeds])]
     setHistory([...history, { words: centerWords, label: centerWords.join(', ') }])
+    setCenterWords(deduped)
     setArticle('')
     explore(seeds)
   }
