@@ -148,8 +148,12 @@ func handleExplore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	langName := map[string]string{"zh": "Chinese", "en": "English"}[req.Lang]
+	if langName == "" {
+		langName = "English"
+	}
+	langInstr := fmt.Sprintf(" Respond in %s.", langName)
 	wordList := strings.Join(req.Words, ", ")
-	langInstr := " Respond in the same language as the seed words."
 	prompt := "Given these seed words: [" + wordList + "], generate 20 closely related words or concepts. Return ONLY a JSON array of strings, no other text." + langInstr
 	system := "You are a semantic association engine. Always respond with valid JSON only, no other text."
 
@@ -187,8 +191,12 @@ func handleExtract(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	langName := map[string]string{"zh": "Chinese", "en": "English"}[req.Lang]
+	if langName == "" {
+		langName = "English"
+	}
+	langInstr := fmt.Sprintf(" Respond in %s.", langName)
 	system := "You are a keyword extraction engine. Extract all important keywords and concepts from the given text. Return ONLY a JSON array of strings, no other text."
-	langInstr := " Respond in the same language as the input text."
 	userPrompt := fmt.Sprintf("Extract all meaningful keywords and concepts from this text:\n\n%s%s", req.Text, langInstr)
 
 	content, err := callLLM(system, userPrompt)
@@ -219,10 +227,14 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	langName := map[string]string{"zh": "Chinese", "en": "English"}[req.Lang]
+	if langName == "" {
+		langName = "English"
+	}
+	langInstr := fmt.Sprintf(" Write the article in %s.", langName)
+	guidance := " Use the following concepts as high-level thematic guidance — the article should be related to them in spirit and direction, but you don't need to force every single one into the text."
 	wordList := strings.Join(req.Words, ", ")
 	system := "You are a skilled writer."
-	langInstr := " Write in the same language as the keywords."
-	guidance := " Use the following concepts as high-level thematic guidance — the article should be related to them in spirit and direction, but you don't need to force every single one into the text."
 	var userPrompt string
 	if req.Existing != "" {
 		userPrompt = fmt.Sprintf("Continue writing the following article. Use these concepts as thematic direction: [%s]. Maintain the same style and language. Do not repeat what has already been written.\n\nExisting article:\n%s\n\nContinue from here:%s%s", wordList, req.Existing, langInstr, guidance)
