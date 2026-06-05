@@ -134,7 +134,7 @@ function App() {
 
   const [autoSelect, setAutoSelect] = useState(() => {
     const v = localStorage.getItem(AUTO_SELECT_KEY)
-    return v === null ? true : v === 'true'
+    return v === null ? false : v === 'true'
   })
   useEffect(() => { localStorage.setItem(AUTO_SELECT_KEY, String(autoSelect)) }, [autoSelect])
   const [expandedCol, setExpandedCol] = useState<string | null>(null)
@@ -156,7 +156,7 @@ function App() {
 
   function apiLang(): string {
     const firstWord = [...centerWords, ...seedInput.split(' ')].find(Boolean)
-    if (!firstWord) return lang === 'zh' ? 'zh' : 'en'
+    if (!firstWord) return lang
     return /[\u4e00-\u9fff]/.test(firstWord) ? 'zh' : 'en'
   }
 
@@ -192,7 +192,9 @@ function App() {
   function handleContinueExplore() {
     const selected = selectedWords.size > 0
       ? Array.from(selectedWords)
-      : currentWords
+      : centerWords
+
+    if (selected.length === 0) return
 
     const deduped = [...new Set([...centerWords, ...selected])]
     setHistory([...history, { words: centerWords, label: centerWords.join(', ') }])
@@ -254,7 +256,7 @@ function App() {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ words: seeds, lang: apiLang() }),
+        body: JSON.stringify({ words: seeds, lang }),
       })
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
@@ -274,7 +276,7 @@ function App() {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ words: seeds, lang: apiLang(), existing: article }),
+        body: JSON.stringify({ words: seeds, lang, existing: article }),
       })
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
