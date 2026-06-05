@@ -276,12 +276,15 @@ func (g *gzipResponseWriter) Write(b []byte) (int, error) {
 }
 
 func main() {
-	llmAPIKey = os.Getenv("OPENROUTER_API_KEY")
+	llmAPIKey = os.Getenv("LLM_API_KEY")
+	if llmAPIKey == "" {
+		llmAPIKey = os.Getenv("OPENROUTER_API_KEY")
+	}
 	if llmAPIKey == "" {
 		llmAPIKey = os.Getenv("DEEPSEEK_API_KEY")
 	}
 	if llmAPIKey == "" {
-		log.Fatal("OPENROUTER_API_KEY or DEEPSEEK_API_KEY not set")
+		log.Fatal("LLM_API_KEY not set")
 	}
 
 	llmModel = os.Getenv("LLM_MODEL")
@@ -293,6 +296,8 @@ func main() {
 	if llmBaseURL == "" {
 		llmBaseURL = "https://openrouter.ai/api/v1"
 	}
+
+	log.Printf("LLM config: model=%s url=%s", llmModel, llmBaseURL)
 
 	http.HandleFunc("/api/explore", handleExplore)
 	http.HandleFunc("/api/generate", handleGenerate)
