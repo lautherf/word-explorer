@@ -165,6 +165,7 @@ function App() {
       return next
     })
     setCenterWords((prev) => prev.includes(word) ? prev : [...prev, word])
+    if (explainTimer.current) { clearTimeout(explainTimer.current); explainTimer.current = null }
   }
 
   function removeCenterWord(word: string) {
@@ -349,12 +350,11 @@ function App() {
   }
 
   async function handleExplain(word: string, e: React.MouseEvent) {
-    const cacheKey = word + '|' + Array.from(selectedWords).sort().join(',')
     setExplainPos({ x: e.clientX, y: e.clientY - 10 })
     setExplainWord(word)
 
-    if (explainCache.current.has(cacheKey)) {
-      setExplanation(explainCache.current.get(cacheKey)!)
+    if (explainCache.current.has(word)) {
+      setExplanation(explainCache.current.get(word)!)
       setExplaining(false)
       return
     }
@@ -363,9 +363,7 @@ function App() {
     const controller = new AbortController()
     abortRef.current = controller
 
-    const context = Array.from(selectedWords).length > 0
-      ? Array.from(selectedWords)
-      : currentWords.filter((w) => w !== word)
+    const context = currentWords.filter((w) => w !== word)
 
     setExplanation('')
     setExplaining(true)
@@ -379,7 +377,7 @@ function App() {
       })
       if (!res.ok) throw new Error('API error')
       const data = await res.json()
-      explainCache.current.set(cacheKey, data.explanation)
+      explainCache.current.set(word, data.explanation)
       setExplanation(data.explanation)
     } catch {
       if (!controller.signal.aborted) setExplanation('')
