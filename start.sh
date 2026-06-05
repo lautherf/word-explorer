@@ -1,20 +1,24 @@
 #!/usr/bin/env bash
 set -e
 
-# Build frontend
-echo "=== Building Frontend ==="
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+echo "=== Build Frontend ==="
 cd frontend && npx vite build && cd ..
 
-# Copy to backend static dir
+echo "=== Build Backend ==="
+cd backend && go build -o app . && cd ..
+
+echo "=== Deploy Static ==="
 rm -rf backend/static
 cp -r frontend/dist backend/static
 
-# Build backend
-echo "=== Building Backend ==="
-cd backend && go build -o app . && cd ..
-
-# Run backend (requires DEEPSEEK_API_KEY or OPENROUTER_API_KEY)
-echo "=== Starting Backend on :8080 ==="
-cd backend && DEEPSEEK_API_KEY="$DEEPSEEK_API_KEY" ./app
+echo "=== Start Server ==="
+kill $(lsof -ti :8080) 2>/dev/null || true
+sleep 0.5
+cd backend && nohup ./app > /tmp/drag-app.log 2>&1 &
+sleep 1
+curl -s -o /dev/null -w "Status: %{http_code}\n" http://localhost:8080/
+echo "=== Done ==="
+echo "Server: http://localhost:8080"
