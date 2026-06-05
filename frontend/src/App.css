@@ -54,6 +54,8 @@
 .io-btn:disabled { opacity: 0.3; cursor: not-allowed }
 .io-label { display: block; cursor: pointer }
 .io-label:active { transform: scale(0.97) }
+.load-demo-btn { width: 100%; margin-bottom: 12px; background: #1e1b3a; border-color: #818cf8; color: #818cf8 }
+.load-demo-btn:hover { background: #2a2340 !important; border-color: #a78bfa !important; color: #a78bfa !important }
 
 .save-col-btn {
   width: 100%; padding: 9px 0; margin-bottom: 12px;

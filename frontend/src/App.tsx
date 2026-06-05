@@ -17,7 +17,7 @@ const zh: Record<string, string> = {
   'extract-placeholder': '粘贴或输入文本...', 'extract': '🔍 提取关键词', 'extracting': '提取中...',
   'error-api': 'API 失败', 'error-gen': '生成文章失败', 'error-extract': '提取关键词失败',
   'settings': '设置', 'add-to-col': '添加到集合',
-  'export': '导出集合', 'import': '导入覆盖',
+  'export': '导出集合', 'import': '导入覆盖', 'load-demo': '载入 Demo',
   'tab-background': '背景设定',
   'continue-length': '续写字数',
   'click-hint': '点击词卡选中，多个选中后点"探索"',
@@ -35,7 +35,7 @@ const en: Record<string, string> = {
   'extract-placeholder': 'Paste or type text...', 'extract': '🔍 Extract Keywords', 'extracting': 'Extracting...',
   'error-api': 'API error', 'error-gen': 'Failed to generate article', 'error-extract': 'Failed to extract keywords',
   'settings': 'Settings', 'add-to-col': 'Add to collection',
-  'export': 'Export', 'import': 'Import & Overwrite',
+  'export': 'Export', 'import': 'Import & Overwrite', 'load-demo': 'Load Demo',
   'tab-background': 'Background',
   'continue-length': 'Words to write',
   'click-hint': 'Click words to select, then click "Explore"',
@@ -243,6 +243,22 @@ function App() {
     setCollections((prev) => prev.map((c) => c.id === colId && !c.words.includes(w) ? { ...c, words: [...c.words, w] } : c))
     setColWordInput('')
   }
+  async function loadDemo() {
+    try {
+      const res = await fetch('/novel-demo.yaml')
+      const text = await res.text()
+      const data = yaml.load(text) as any[]
+      if (Array.isArray(data)) {
+        setCollections(data.map((item: any, i: number) => ({
+          id: Date.now().toString() + i,
+          name: item.name || `Collection ${i + 1}`,
+          words: Array.isArray(item.words) ? item.words : [],
+          checked: !!item.checked,
+        })))
+      }
+    } catch {}
+  }
+
   function exportCollections() {
     const data = collections.map(({ id, name, words, checked }) => ({ name, words, checked }))
     const yamlStr = yaml.dump(data, { indent: 2 })
@@ -286,7 +302,55 @@ function App() {
     <div className="app-layout">
       <div className={`drawer-overlay ${mobileDrawerOpen ? 'open' : ''}`} onClick={() => setMobileDrawerOpen(false)} />
       <aside className={`sidebar ${mobileDrawerOpen ? 'open' : ''}`}>
-        {sidebarContent()}
+        <div className="sidebar-top">
+          <h2>{t(lang, 'collections')}</h2>
+          <div className="sidebar-top-actions">
+            <button className="settings-toggle" onClick={() => setShowSettings(!showSettings)} title={t(lang, 'settings')}>⚙</button>
+            <button className="lang-toggle" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>{lang === 'zh' ? 'EN' : '中'}</button>
+          </div>
+        </div>
+        {showSettings && (
+          <div className="settings-panel">
+            <label className="setting-row"><span>{t(lang, 'settings')}</span></label>
+          </div>
+        )}
+        {centerWords.length > 0 && <button className="save-col-btn" onClick={saveCollection}>{t(lang, 'save-center')}</button>}
+        <div className="sidebar-io">
+          <button className="io-btn" onClick={exportCollections} disabled={collections.length === 0}>{t(lang, 'export')}</button>
+          <label className="io-btn io-label">{t(lang, 'import')}<input type="file" accept=".yaml,.yml" onChange={importCollections} hidden /></label>
+        </div>
+        <button className="io-btn load-demo-btn" onClick={loadDemo}>{t(lang, 'load-demo')}</button>
+        <div className="collection-list">
+          {collections.length === 0 && <p className="empty-hint">{t(lang, 'no-collections')}</p>}
+          {collections.map((c) => {
+            const isExpanded = expandedCol === c.id
+            return (
+              <div key={c.id}>
+                <div className={`collection-item ${c.checked ? 'active' : ''}`}>
+                  <label className="collect-label">
+                    <input type="checkbox" checked={c.checked} onChange={() => toggleCollection(c.id)} />
+                    <input className="collect-name" value={c.name} onChange={(e) => renameCollection(c.id, e.target.value)} onClick={(e) => e.stopPropagation()} />
+                  </label>
+                  <span className="collect-count">{c.words.length}</span>
+                  <button className="collect-expand" onClick={() => setExpandedCol(isExpanded ? null : c.id)}>{isExpanded ? '▾' : '▸'}</button>
+                  <button className="collect-del" onClick={() => deleteCollection(c.id)}>✕</button>
+                </div>
+                {isExpanded && (
+                  <div className="collection-words">
+                    {c.words.map((w) => (
+                      <div key={w} className="collection-word-row"><span>{w}</span><button onClick={() => removeCollectionWord(c.id, w)}>✕</button></div>
+                    ))}
+                    <div className="collection-word-add">
+                      <input value={colWordInput} onChange={(e) => setColWordInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addCollectionWord(c.id)} placeholder={t(lang, 'add-to-col')} />
+                      <button onClick={() => addCollectionWord(c.id)} disabled={!colWordInput.trim()}>+</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+        {hasActiveCollections && <p className="collect-hint">{t(lang, 'active-hint')}</p>}
       </aside>
 
       <main className="main">
