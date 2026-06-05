@@ -390,7 +390,7 @@ function App() {
 
   function startExplain(word: string, e: React.MouseEvent) {
     if (explainTimer.current) clearTimeout(explainTimer.current)
-    explainTimer.current = window.setTimeout(() => handleExplain(word, e), 300)
+    explainTimer.current = window.setTimeout(() => handleExplain(word, e), 1000)
   }
 
   function cancelExplain() {
