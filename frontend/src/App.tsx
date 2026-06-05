@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { marked } from 'marked'
+import * as yaml from 'js-yaml'
 import './App.css'
 
 type Lang = 'zh' | 'en'
@@ -221,10 +222,12 @@ function App() {
     setColWordInput('')
   }
   function exportCollections() {
-    const blob = new Blob([JSON.stringify(collections, null, 2)], { type: 'application/json' })
+    const data = collections.map(({ id, name, words, checked }) => ({ name, words, checked }))
+    const yamlStr = yaml.dump(data, { indent: 2 })
+    const blob = new Blob([yamlStr], { type: 'text/yaml' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url; a.download = 'word-explorer-collections.json'
+    a.href = url; a.download = 'word-explorer-collections.yaml'
     a.click(); URL.revokeObjectURL(url)
   }
 
@@ -234,9 +237,14 @@ function App() {
     const reader = new FileReader()
     reader.onload = () => {
       try {
-        const data = JSON.parse(reader.result as string)
+        const data = yaml.load(reader.result as string) as any[]
         if (Array.isArray(data)) {
-          setCollections(data)
+          setCollections(data.map((item: any, i: number) => ({
+            id: Date.now().toString() + i,
+            name: item.name || `Collection ${i + 1}`,
+            words: Array.isArray(item.words) ? item.words : [],
+            checked: !!item.checked,
+          })))
         }
       } catch {}
     }
@@ -270,7 +278,7 @@ function App() {
         {centerWords.length > 0 && <button className="save-col-btn" onClick={saveCollection}>{t(lang, 'save-center')}</button>}
         <div className="sidebar-io">
           <button className="io-btn" onClick={exportCollections} disabled={collections.length === 0}>{t(lang, 'export')}</button>
-          <label className="io-btn io-label">{t(lang, 'import')}<input type="file" accept=".json" onChange={importCollections} hidden /></label>
+          <label className="io-btn io-label">{t(lang, 'import')}<input type="file" accept=".yaml,.yml" onChange={importCollections} hidden /></label>
         </div>
         <div className="collection-list">
           {collections.length === 0 && <p className="empty-hint">{t(lang, 'no-collections')}</p>}
