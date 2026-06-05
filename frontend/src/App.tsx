@@ -12,7 +12,7 @@ const zh: Record<string, string> = {
   'manual-placeholder': '键入词后添加...', 'add': '+ 添加',
   'generate': '✍ 生成文章', 'generating': '写作中...',
   'thinking': '思考中...',
-  'tab-explore': '探索结果', 'tab-article': '生成文章', 'tab-extract': '文章解析',
+  'tab-explore': '探索结果', 'tab-article': '文章展示', 'tab-extract': '文章解析',
   'copy': '📋 复制', 'continue': '续写', 'continuing': '续写中...',
   'extract-placeholder': '粘贴或输入文本...', 'extract': '🔍 提取关键词', 'extracting': '提取中...',
   'error-api': 'API 失败', 'error-gen': '生成文章失败', 'error-extract': '提取关键词失败',
